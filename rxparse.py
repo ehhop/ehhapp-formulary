@@ -88,7 +88,7 @@ class FormularyRecord:
     * SUBCATEGORY - e.g. Topical, i.e. "Route of administration"
     """
 
-    _APPROVALFLAG_ = '~'
+    _BLACKLIST_ = '~'
     _DOSEPATT_ = '(\()(.+)(\))'
     _COSTPATT_ = '\$\d+[.0-9]?[0-9]?[0-9]?'
     _DOSECOSTPATT_ = re.compile(r"""
@@ -104,35 +104,33 @@ class FormularyRecord:
         self.DOSECOST = self._get_DOSECOST(record)
         self.CATEGORY = None
         self.SUBCATEGORY = None
-        self.APPROVED = True
+        self.BLACKLISTED = False
 
     def _get_NAME(self, record):
+        """Sets the name attribute.
+
+        Uses regex pattern to find the name.
+        Sniffs for the _BLACKLIST_ and strips it - 
+        and sets the BLACKLISTED attribute to true.
+        """
+
         namestring = record[0]
-        if namestring[0] == self._APPROVALFLAG_:
-            name = namestring.lstrip(self._APPROVALFLAG_)
+        if namestring[0] == self._BLACKLIST_:
+            self.BLACKLISTED = True
+            name = namestring.lstrip(self._BLACKLIST_)
         else:
             name = namestring
 
         return name
 
-    def _get_DOSEandCOST(self, record):
-        dosecoststring = record[1]
-        
-        dosematch = re.search(self._DOSEPATT_, dosecoststring)
-        if dosematch:
-            dose = dosematch.groups()[1]
-        else:
-            dose = dosecoststring
-
-        costmatch = re.search(self._COSTPATT_, dosecoststring)
-        if costmatch:
-            cost = costmatch.group()
-        else:
-            cost = dosecoststring
-
-        return dose, cost
-
     def _get_DOSECOST(self, record):
+        """Sets the DOSECOST attribute.
+
+        Uses regex pattern to find prices and associated doses.
+        The method re.findall is called so that multiple dose/cost
+        pairs for a given drug are returned in a list.
+        If no dose/cost matches are found, an empty list is returned.
+        """
         dosecoststring = record[1]
         match = self._DOSECOSTPATT_.findall(dosecoststring)
 
@@ -142,8 +140,10 @@ class FormularyRecord:
 Some functions convert Tabular data to EHHapp Markdown 
 """
 
-# Define a class drug in which to store relevant output attributes
 class drug:
+    """A data structure in which to store relevant output attributes
+    """
+
     dosepattern1 = re.compile('(\d+MG)')
 
     def __init__(self, record):
@@ -160,13 +160,16 @@ class drug:
             print("Match found")
         return self
 
-# For each drug record, generate an instance of drug with relevant parameters
 def parse_classify(recordlist):
+    """For each drug record, generate an instance of drug with relevant parameters
+    """
+
     druglist = [drug(record).dosefind() for record in recordlist]
     return druglist
 
-# Remove duplicates by generating a dictionary based on item number keys
 def classify_rmvdups(druglist):
+    """Remove duplicates by generating a dictionary based on item number keys
+    """
     nodup_drugdict = {drug.itemnum: drug for drug in druglist}
     return nodup_drugdict
 
@@ -212,8 +215,8 @@ if __name__ == "__main__":
     print(len(formularyparsed))
     print(formularyparsed[0])
     for record in formularyparsed:
-        print(FormularyRecord(record).DOSECOST)
-
+        if FormularyRecord(record).DOSECOST == []:
+            print(FormularyRecord(record).NAME)
     """
     print(dataread[0])
     recordlist = read_parse(dataread)

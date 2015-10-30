@@ -26,6 +26,7 @@ The relevant data fields in the EHHapp Formulary are:
 
 import re
 import csv
+from datetime import datetime
 
 def read_csv(filename):
     """Make csv files available as csv.reader objects.
@@ -38,8 +39,6 @@ def read_csv(filename):
             csvlines.append(item)
         return csvlines
 
-# Define a pattern to match an Item Number in one of these lines
-
 def filter_loe(loe, value="\d{5}", index=2):
     """Filter list of enumerables (lol) by value and index.
 
@@ -48,14 +47,14 @@ def filter_loe(loe, value="\d{5}", index=2):
     the regular expression pattern specified by value
     argument.
 
-    value = "\d{5}" by default
+    value = "\d{5}" by default.
     """
 
     filteredlist = [l for l in loe if re.fullmatch(value, l[index])]
     return filteredlist
 
 """
-Create drug objects from EHHapp Markdown so names of drugs and prices can be compared
+Create FormularyRecord objects from EHHapp Markdown so names of drugs and prices can be compared
 """
 def read_md(filename):
     """Make md files available as a list of strings (yes these are enumerable).
@@ -84,13 +83,11 @@ class FormularyRecord:
     * DRUG_NAME
     * DOSE, COST_pD - dosage size and price per dose
     * CATEGORY - e.g. ANALGESICS
-    * APPROVED - whether the drug is blacklisted or not
+    * BLACKLISTED - whether the drug is blacklisted or not
     * SUBCATEGORY - e.g. Topical, i.e. "Route of administration"
     """
 
     _BLACKLIST_ = '~'
-    _DOSEPATT_ = '(\()(.+)(\))'
-    _COSTPATT_ = '\$\d+[.0-9]?[0-9]?[0-9]?'
     _DOSECOSTPATT_ = re.compile(r"""
     (\$\d+[.0-9]?\d*-\$\d+[.0-9]?\d*
                 |\$\d+[.0-9]?\d*)
@@ -114,7 +111,7 @@ class FormularyRecord:
         and sets the BLACKLISTED attribute to true.
         """
 
-        namestring = record[0]
+        namestring = record[0].lower()
         if namestring[0] == self._BLACKLIST_:
             self.BLACKLISTED = True
             name = namestring.lstrip(self._BLACKLIST_)
@@ -131,7 +128,8 @@ class FormularyRecord:
         pairs for a given drug are returned in a list.
         If no dose/cost matches are found, an empty list is returned.
         """
-        dosecoststring = record[1]
+        
+        dosecoststring = record[1].lower()
         match = self._DOSECOSTPATT_.findall(dosecoststring)
 
         return match
@@ -140,38 +138,61 @@ class FormularyRecord:
 Some functions convert Tabular data to EHHapp Markdown 
 """
 
-class drug:
-    """A data structure in which to store relevant output attributes
+class InvoiceRecord:
+    """A data structure in which to store relevant output attributes.
     """
-
-    dosepattern1 = re.compile('(\d+MG)')
 
     def __init__(self, record):
-        self.name = record[3]
-        self.cost = record[15]
-        self.category = record[8]
-        self.dose = ""
-        self.subcategory = ""
-        self.itemnum = record[2]
+        self.NAMEDOSE = record[3].lower()
+        self.COST = record[15].lower()
+        self.CATEGORY = record[8]
+        self.SUBCATEGORY = None
+        self.ITEMNUM = record[2]
+        self.RECDATE = self._get_RECDATE(record)
 
-    def dosefind(self):
-        if self.dosepattern1.search(self.name):
-            self.dose = self.dosepattern1.search(self.name).groups()[0]
-            print("Match found")
-        return self
+    def _get_RECDATE(self, record):
+        dtformat = '%m/%d/%y %H:%M'
+        
+        recdate = datetime.strptime(record[12], dtformat)
 
-def parse_classify(recordlist):
-    """For each drug record, generate an instance of drug with relevant parameters
+        return recdate
+
+def store_pricetable(recordlist):
+    """For each drug record, generate an instance of drug with relevant parameters.
+    
+    Remove duplicates by generating a dictionary based on item number keys.
     """
 
-    druglist = [drug(record).dosefind() for record in recordlist]
-    return druglist
-
-def classify_rmvdups(druglist):
-    """Remove duplicates by generating a dictionary based on item number keys
-    """
+    druglist = [InvoiceRecord(record) for record in recordlist]
+    
     nodup_drugdict = {drug.itemnum: drug for drug in druglist}
+    
     return nodup_drugdict
+
+"""
+All of these functions should keep track of differences between new and old data
+"""
+def formulary_update(formulary, invoice):
+    """Update drugs in formulary with prices from invoice.
+    
+    Called when formulary and invoice are parsed lists of lists.
+    """
+
+    mcount = 0 # Keeps track of the number of matches
+
+    for line in formulary:
+        record = FormularyRecord(line)
+        drugname = record.NAME
+        dosecost = record.DOSECOST
+        
+        for entry in invoice:
+            namedose = InvoiceRecord(entry).NAMEDOSE
+            
+            if drugname in namedose:
+                match = True
+                mcount += 1
+
+    return mcount
 
 """
 These functions control output to Markdown
@@ -187,10 +208,6 @@ def to_Markdown(drugdict):
     with open("invoice-extract.markdown", "w") as f:
         f.write('\n'.join(output))
 """
-All of these functions should keep track of differences between new and old data
-"""
-
-"""
 Janky debug functions
 """
 
@@ -199,12 +216,17 @@ def debug(datastructure):
 
 if __name__ == "__main__":
     import sys
+    # Processing Invoice
     csvdata = read_csv(str(sys.argv[1]))
     print(len(csvdata))
     print(csvdata[0])
     recordlist = filter_loe(csvdata)
-    print(len(recordlist))
+    print('Number of Invoice Entries: {}'.format(len(recordlist)))
     print(recordlist[0])
+    for i in range(0,4):
+        print('from Invoice: NAMEDOSE:{} COST:{} DATE:{}'.format(InvoiceRecord(recordlist[i]).NAMEDOSE, InvoiceRecord(recordlist[i]).COST, InvoiceRecord(recordlist[i]).RECDATE))
+
+    # Processing Formulary
     mddata = read_md(str(sys.argv[2]))
     print(len(mddata))
     print(mddata[0])
@@ -212,11 +234,15 @@ if __name__ == "__main__":
     print(len(formularylist))
     print(formularylist[0])
     formularyparsed = parse_mddata(formularylist)
-    print(len(formularyparsed))
+    print('Number of Formulary Records: {}'.format(len(formularyparsed)))
     print(formularyparsed[0])
-    for record in formularyparsed:
-        if FormularyRecord(record).DOSECOST == []:
-            print(FormularyRecord(record).NAME)
+    for i in range(0,4):
+        print('from Formulary: NAME:{} DOSECOST:{}'.format(FormularyRecord(formularyparsed[i]).NAME, FormularyRecord(formularyparsed[i]).DOSECOST))
+    
+    # Updating Formulary Against Invoice
+    mcount = formulary_update(formularyparsed, recordlist)
+    print('Number of matches found: {}'.format(mcount))
+
     """
     print(dataread[0])
     recordlist = read_parse(dataread)

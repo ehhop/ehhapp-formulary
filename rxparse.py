@@ -1,7 +1,19 @@
 """
-# How to Automatically Update the EHHOP Formulary
+Automatically Update the EHHOP Formulary
 
 ## Goal: Compare existing EHHapp Formulary data against new invoices and update prices/costs when necessary.
+
+So this shitty little script takes an invoice.csv file and an rx.md file, and parses 
+them into InvoiceRecord and FormularyRecord objects respectively so that drug prices 
+in one can be checked againt the other. invoice.csv reflects reality and prices from
+rx.md are updated to match. New markdown is then generated for updating the EHHapp.
+
+## TO DO:
+
+- Capture CATEGORY attribute for FormularyRecord objects
+- Output finished Markdown to update the EHHapp Formulary
+- Figure out what drug price updates might be missed by this script
+
 
 EHHapp Formulary Template: This is how we display information about drugs in the EHHapp.
 
@@ -63,6 +75,34 @@ def read_md(filename):
         mdlines = f.readlines()
         return mdlines
 
+def filter_rx(loe, value=">", index=0):
+    """Filter list of enumerables (lol) by value and index.
+
+    A list comprehension is used to check each list at
+    position specified by index for a full match with
+    the regular expression pattern specified by value
+    argument.
+
+    value = "\d{5}" by default.
+    """
+
+    CATEGORYPATT = re.compile('(^\*.+)') 
+
+    filteredlist = []
+    
+    category = None
+
+    for l in loe:
+        if CATEGORYPATT.match(l):
+            category = CATEGORYPATT.match(l).groups()[0].lstrip('\* ')
+            continue
+        elif l[index] == value:
+            filteredlist.append(l + ' | ' + category)
+        else:
+            continue
+
+    return filteredlist
+
 def parse_mddata(lomd, delimiter="|"):
     """Parse a list of Markdown strings (lomd) to return list of lists (lol).
     """
@@ -97,15 +137,14 @@ class FormularyRecord:
             (?:\))""", re.X)
 
     def __init__(self, record):
-        self.NAME = self._get_NAME(record)
+        self.NAME = self._set_NAMEandBLACKLISTED(record)
         self.DOSECOST = self._get_DOSECOST(record)
-        self.CATEGORY = None
-        self.SUBCATEGORY = record[2]
-        self.BLACKLISTED = False
         self.PRICETABLE = {}
-
-    def _get_NAME(self, record):
-        """Sets the name attribute.
+        self.SUBCATEGORY = record[2]
+        self.CATEGORY = record[3]
+    
+    def _set_NAMEandBLACKLISTED(self, record):
+        """Sets the NAME and BLACKLISTED attribute.
 
         Uses regex pattern to find the name.
         Sniffs for the _BLACKLIST_ and strips it - 
@@ -114,9 +153,11 @@ class FormularyRecord:
 
         namestring = record[0].lower()
         if namestring[0] == self._BLACKLIST_:
+            print("Matched a tilde!")
             self.BLACKLISTED = True
             name = namestring.lstrip(self._BLACKLIST_)
         else:
+            self.BLACKLISTED = False
             name = namestring
 
         return name
@@ -144,8 +185,8 @@ class FormularyRecord:
 
     # Public Instance Methods
 
-    def _table_NAMEDOSECOST(self):
-        """Produce a NAMEDOSECOST list to assist price check.
+    def _set_PRICETABLE(self):
+        """Produce a dictionary to assist price check.
         """
 
         for dosecost in self.DOSECOST:
@@ -175,7 +216,7 @@ class FormularyRecord:
 
         dosesandcosts_str = ', '.join(dosesandcosts_list)
 
-        markdown = '> {}{} | {} | {}'.format(prefix, self.NAME, dosesandcosts_str, self.SUBCATEGORY)
+        markdown = '> {}{} | {} | {}'.format(prefix, self.NAME.capitalize(), dosesandcosts_str, self.SUBCATEGORY)
  
         return markdown
 
@@ -250,48 +291,59 @@ def formulary_update(formulary, pricetable):
     # Keeps track of price discrepancies
     pricechanges = 0
 
+
+    # Loop through each FormularyRecord
     for record in formulary:
 
         # Set the PRICETABLE attribute
-        record._table_NAMEDOSECOST()
+        record._set_PRICETABLE()
 
+        # Then loop through each dose/cost pair for the given record
         for k, v in record.PRICETABLE.items():
             dcost = v[0]
             dnamedose = k
             
+            # Look up a matching record stored in the invoice-derived pricetable
             for nd, ir in pricetable.items():
+
+                # If the name and dose are a substring of the pricetable key then we have a match
                 if dnamedose in nd:
                     match = True
                     mcount += 1
                     
+                    # If the corresponding prices do not match then a pricechange has taken place
                     if dcost != ir.COST:
                         pricechanges += 1
                         print('New drug price found for {}!\nFormulary price: {}\nInvoice cost: {}'.format(dnamedose, dcost, ir.COST))
                         
+                        # Modify the PRICETABLE for the given record to reflect the invoice-derived cost
                         record.PRICETABLE[dnamedose][0] = ir.COST
-
 
     return mcount, pricechanges, formulary
 
 """
+### WORK-IN-PROGRESS
 These functions control output to Markdown
 """
-# Any dictionary with drug objects as values to Markdown
-def to_Markdown(drugdict):
+def to_Markdown(formulary):
     output = []
-    category = "Uncategorized"
+    
+    category = formulary[0].CATEGORY
     output.append("* {}".format(category))
-    for itemnum, drug in drugdict.items():
-        output.append("> {} | {} ({})| {}".format(drug.name, drug.cost, drug.dose, drug.subcategory))
+    
+    for record in formulary:
+        if record.CATEGORY != category:
+            category = record.CATEGORY
+            output.append("* {}".format(category))
+
+        output.append(record._to_markdown())
 
     with open("invoice-extract.markdown", "w") as f:
         f.write('\n'.join(output))
-"""
-Janky debug functions
-"""
 
-def debug(datastructure):
-    print(len(datastructure))
+"""
+Janky ass debug functions
+"""
 
 if __name__ == "__main__":
     import sys
@@ -311,11 +363,10 @@ if __name__ == "__main__":
 
     # Processing Formulary
     print('Processing Formulary...\n')
-    print
     mddata = read_md(str(sys.argv[2]))
     print(len(mddata))
     print(mddata[0])
-    formularylist = filter_loe(mddata, value=">", index=0)
+    formularylist = filter_rx(mddata)
     print(len(formularylist))
     print(formularylist[0])
     formularyparsed = parse_mddata(formularylist)
@@ -332,3 +383,10 @@ if __name__ == "__main__":
 
     for i in range(0,4):
         print('updated Formulary markdown: {}'.format(updatedformulary[i]._to_markdown()))
+
+    to_Markdown(updatedformulary)
+
+    # Test BLACKLISTED attribute
+
+    blacklisted = [d for d in updatedformulary if d.BLACKLISTED]
+    print('The number of drugs are blacklisted: {}'.format(len(blacklisted)))

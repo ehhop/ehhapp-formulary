@@ -68,12 +68,12 @@ def parse_mddata(lomd, delimiter="|"):
     """
     mdlol = [string.lstrip("> ").rstrip().split(delimiter) for string in lomd]
 
-    mdlolclean = []
+    parsedformulary = []
     for item in mdlol:
         item = [s.strip() for s in item]
-        mdlolclean.append(item)
+        parsedformulary.append(item)
 
-    return mdlolclean
+    return parsedformulary
 
 class FormularyRecord:
     """Define a class that corresponds to a formulary entry.
@@ -100,8 +100,9 @@ class FormularyRecord:
         self.NAME = self._get_NAME(record)
         self.DOSECOST = self._get_DOSECOST(record)
         self.CATEGORY = None
-        self.SUBCATEGORY = None
+        self.SUBCATEGORY = record[2]
         self.BLACKLISTED = False
+        self.PRICETABLE = {}
 
     def _get_NAME(self, record):
         """Sets the name attribute.
@@ -134,6 +135,61 @@ class FormularyRecord:
 
         return match
 
+    def _get_SUBCATEGORY(self, record):
+        """Sets the SUBCATEGORY attribute.
+        """
+        subcategory = ''
+
+        return subcategory
+
+    # Public Instance Methods
+
+    def _table_NAMEDOSECOST(self):
+        """Produce a NAMEDOSECOST list to assist price check.
+        """
+
+        for dosecost in self.DOSECOST:
+            dose = dosecost[1]
+            cost = dosecost[0]
+            namedose = '{} {}'.format(self.NAME, dose)
+            self.PRICETABLE[namedose] = [cost, self.NAME, dose]
+
+    def _to_markdown(self):
+        """ Generate output string.
+
+        * CATEGORY
+        > ~DRUG_NAME | COST_pD (DOSE) | SUBCATEGORY
+        """
+
+        if self.BLACKLISTED == True:
+            prefix = '~'
+        else:
+            prefix = ''
+
+
+        dosesandcosts_list = []
+        
+        for k, v in self.PRICETABLE.items():
+            output_str = '{} ({})'.format(v[0], v[2])
+            dosesandcosts_list.append(output_str)
+
+        dosesandcosts_str = ', '.join(dosesandcosts_list)
+
+        markdown = '> {}{} | {} | {}'.format(prefix, self.NAME, dosesandcosts_str, self.SUBCATEGORY)
+ 
+        return markdown
+
+def store_formulary(parsedformulary):
+    """Store a bunch of formulary record objects in a list.
+    """
+
+    formulary = []
+
+    for record in parsedformulary:
+        formulary.append(FormularyRecord(record))
+
+    return formulary
+
 """
 Some functions convert Tabular data to EHHapp Markdown 
 """
@@ -158,41 +214,64 @@ class InvoiceRecord:
         return recdate
 
 def store_pricetable(recordlist):
-    """For each drug record, generate an instance of drug with relevant parameters.
+    """For each drug record, generate an instance of InvoiceRecord with relevant parameters.
     
     Remove duplicates by generating a dictionary based on item number keys.
     """
 
-    druglist = [InvoiceRecord(record) for record in recordlist]
+    pricetable = {}
+
+    for record in recordlist:
+        entry = InvoiceRecord(record)
+        drugname = entry.NAMEDOSE
+
+        if drugname not in pricetable:
+            pricetable[drugname] = entry
+        else:
+            if entry.RECDATE > pricetable[drugname].RECDATE:
+                pricetable[drugname] = entry
     
-    nodup_drugdict = {drug.itemnum: drug for drug in druglist}
-    
-    return nodup_drugdict
+    return pricetable
 
 """
 All of these functions should keep track of differences between new and old data
 """
-def formulary_update(formulary, invoice):
+
+def formulary_update(formulary, pricetable):
     """Update drugs in formulary with prices from invoice.
     
-    Called when formulary and invoice are parsed lists of lists.
+    Called when formulary is a parsed list of lists,
+    and most recent drug prices per DOSENAME are stored in a dictionary.
     """
 
-    mcount = 0 # Keeps track of the number of matches
+    # Keeps track of the number of matches
+    mcount = 0
 
-    for line in formulary:
-        record = FormularyRecord(line)
-        drugname = record.NAME
-        dosecost = record.DOSECOST
-        
-        for entry in invoice:
-            namedose = InvoiceRecord(entry).NAMEDOSE
+    # Keeps track of price discrepancies
+    pricechanges = 0
+
+    for record in formulary:
+
+        # Set the PRICETABLE attribute
+        record._table_NAMEDOSECOST()
+
+        for k, v in record.PRICETABLE.items():
+            dcost = v[0]
+            dnamedose = k
             
-            if drugname in namedose:
-                match = True
-                mcount += 1
+            for nd, ir in pricetable.items():
+                if dnamedose in nd:
+                    match = True
+                    mcount += 1
+                    
+                    if dcost != ir.COST:
+                        pricechanges += 1
+                        print('New drug price found for {}!\nFormulary price: {}\nInvoice cost: {}'.format(dnamedose, dcost, ir.COST))
+                        
+                        record.PRICETABLE[dnamedose][0] = ir.COST
 
-    return mcount
+
+    return mcount, pricechanges, formulary
 
 """
 These functions control output to Markdown
@@ -217,6 +296,7 @@ def debug(datastructure):
 if __name__ == "__main__":
     import sys
     # Processing Invoice
+    print('Processing Invoice...\n')
     csvdata = read_csv(str(sys.argv[1]))
     print(len(csvdata))
     print(csvdata[0])
@@ -226,7 +306,12 @@ if __name__ == "__main__":
     for i in range(0,4):
         print('from Invoice: NAMEDOSE:{} COST:{} DATE:{}'.format(InvoiceRecord(recordlist[i]).NAMEDOSE, InvoiceRecord(recordlist[i]).COST, InvoiceRecord(recordlist[i]).RECDATE))
 
+    pricetable = store_pricetable(recordlist)
+    print('Number of Price Table Entries: {}'.format(len(pricetable)))
+
     # Processing Formulary
+    print('Processing Formulary...\n')
+    print
     mddata = read_md(str(sys.argv[2]))
     print(len(mddata))
     print(mddata[0])
@@ -238,19 +323,12 @@ if __name__ == "__main__":
     print(formularyparsed[0])
     for i in range(0,4):
         print('from Formulary: NAME:{} DOSECOST:{}'.format(FormularyRecord(formularyparsed[i]).NAME, FormularyRecord(formularyparsed[i]).DOSECOST))
+
+    formulary = store_formulary(formularyparsed)
     
     # Updating Formulary Against Invoice
-    mcount = formulary_update(formularyparsed, recordlist)
-    print('Number of matches found: {}'.format(mcount))
+    mcount, pricechanges, updatedformulary  = formulary_update(formulary, pricetable)
+    print('Number of medication matches found: {}\nNumber of price changes found: {}'.format(mcount, pricechanges))
 
-    """
-    print(dataread[0])
-    recordlist = read_parse(dataread)
-    print(recordlist[0])
-    druglist = parse_classify(recordlist)
-    print(druglist[0].name)
-    debug(druglist)
-    nddd = classify_rmvdups(druglist)
-    debug(nddd)
-    to_Markdown(nddd)
-    """
+    for i in range(0,4):
+        print('updated Formulary markdown: {}'.format(updatedformulary[i]._to_markdown()))

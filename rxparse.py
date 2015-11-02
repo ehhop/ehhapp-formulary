@@ -39,16 +39,23 @@ The relevant data fields in the EHHapp Formulary are:
 import re
 import csv
 from datetime import datetime
+from collections import namedtuple
+
+"""
+Some functions convert Tabular data to EHHapp Markdown 
+"""
 
 def read_csv(filename):
-    """Make csv files available as csv.reader objects.
+    """Input to a csv reader object, output a list of parsed lines.
     """
 
     with open(filename, 'rU') as f:
-        iterablething = csv.reader(f)
+        readerobj = csv.reader(f)
         csvlines = []
-        for item in iterablething:
+        
+        for item in readerobj:
             csvlines.append(item)
+        
         return csvlines
 
 def filter_loe(loe, value="\d{5}", index=2):
@@ -64,6 +71,39 @@ def filter_loe(loe, value="\d{5}", index=2):
 
     filteredlist = [l for l in loe if re.fullmatch(value, l[index])]
     return filteredlist
+
+# Returns a tuple subclass named InvoiceRecord with named fields NAMEDOSE, etc.
+InvRec = namedtuple('InvoiceRecord', ['NAMEDOSE', 'COST', 'CATEGORY', 'ITEMNUM', 'REQDATE'])
+
+def store_pricetable(recordlist):
+    """For each drug record, generate an instance of InvoiceRecord with relevant parameters.
+    
+    Remove duplicates by generating a dictionary based on item number keys.
+    """
+
+    pricetable = {}
+
+    for record in recordlist:
+
+        # Convert date string to datetime object
+        dtformat = '%m/%d/%y %H:%M'
+        converteddatetime = datetime.strptime(record[12], dtformat)
+        
+        entry = InvRec(NAMEDOSE = record[3], \
+                COST = record[15], \
+                CATEGORY = record[8], \
+                ITEMNUM = record[2], \
+                REQDATE = converteddatetime)
+
+        drugname = entry.NAMEDOSE
+
+        if drugname not in pricetable:
+            pricetable[drugname] = entry
+        else:
+            if entry.REQDATE > pricetable[drugname].REQDATE:
+                pricetable[drugname] = entry
+    
+    return pricetable
 
 """
 Create FormularyRecord objects from EHHapp Markdown so names of drugs and prices can be compared
@@ -153,7 +193,6 @@ class FormularyRecord:
 
         namestring = record[0]
         if namestring[0] == self._BLACKLIST_:
-            print("Matched a tilde!")
             self.BLACKLISTED = True
             name = namestring.lstrip(self._BLACKLIST_)
         else:
@@ -232,49 +271,6 @@ def store_formulary(parsedformulary):
     return formulary
 
 """
-Some functions convert Tabular data to EHHapp Markdown 
-"""
-
-class InvoiceRecord:
-    """A data structure in which to store relevant output attributes.
-    """
-
-    def __init__(self, record):
-        self.NAMEDOSE = record[3]
-        self.COST = record[15]
-        self.CATEGORY = record[8]
-        self.SUBCATEGORY = None
-        self.ITEMNUM = record[2]
-        self.RECDATE = self._get_RECDATE(record)
-
-    def _get_RECDATE(self, record):
-        dtformat = '%m/%d/%y %H:%M'
-        
-        recdate = datetime.strptime(record[12], dtformat)
-
-        return recdate
-
-def store_pricetable(recordlist):
-    """For each drug record, generate an instance of InvoiceRecord with relevant parameters.
-    
-    Remove duplicates by generating a dictionary based on item number keys.
-    """
-
-    pricetable = {}
-
-    for record in recordlist:
-        entry = InvoiceRecord(record)
-        drugname = entry.NAMEDOSE
-
-        if drugname not in pricetable:
-            pricetable[drugname] = entry
-        else:
-            if entry.RECDATE > pricetable[drugname].RECDATE:
-                pricetable[drugname] = entry
-    
-    return pricetable
-
-"""
 All of these functions should keep track of differences between new and old data
 """
 
@@ -284,6 +280,8 @@ def formulary_update(formulary, pricetable):
     Called when formulary is a parsed list of lists,
     and most recent drug prices per DOSENAME are stored in a dictionary.
     """
+    # Keeps track of soft matches
+    softmatch = 0
 
     # Keeps track of the number of matches
     mcount = 0
@@ -302,11 +300,15 @@ def formulary_update(formulary, pricetable):
         for k, v in record.PRICETABLE.items():
             dcost = v[0].lower()
             dnamedose = k.lower()
+            dname = v[1].lower()
             
             # Look up a matching record stored in the invoice-derived pricetable
             for nd, ir in pricetable.items():
                 invnamedose = nd.lower()
                 invcost = ir.COST.lower()
+
+                if dname in invnamedose:
+                    softmatch += 1
 
                 # If the name and dose are a substring of the pricetable key then we have a match
                 if dnamedose in invnamedose:
@@ -321,7 +323,7 @@ def formulary_update(formulary, pricetable):
                         # Modify the PRICETABLE for the given record to reflect the invoice-derived cost
                         record.PRICETABLE[k][0] = ir.COST
 
-    return mcount, pricechanges, formulary
+    return mcount, pricechanges, formulary, softmatch
 
 """
 ### WORK-IN-PROGRESS
@@ -357,11 +359,9 @@ if __name__ == "__main__":
     recordlist = filter_loe(csvdata)
     print('Number of Invoice Entries: {}'.format(len(recordlist)))
     print(recordlist[0])
-    for i in range(0,4):
-        print('from Invoice: NAMEDOSE:{} COST:{} DATE:{}'.format(InvoiceRecord(recordlist[i]).NAMEDOSE, InvoiceRecord(recordlist[i]).COST, InvoiceRecord(recordlist[i]).RECDATE))
-
+    
     pricetable = store_pricetable(recordlist)
-    print('Number of Price Table Entries: {}'.format(len(pricetable)))
+    print('Number of Price Table Entries: {}\nEach Entry is a: {}'.format(len(pricetable), type(next(iter(pricetable.values())))))
 
     # Processing Formulary
     print('Processing Formulary...\n')
@@ -380,8 +380,8 @@ if __name__ == "__main__":
     formulary = store_formulary(formularyparsed)
     
     # Updating Formulary Against Invoice
-    mcount, pricechanges, updatedformulary  = formulary_update(formulary, pricetable)
-    print('Number of medication matches found: {}\nNumber of price changes found: {}'.format(mcount, pricechanges))
+    mcount, pricechanges, updatedformulary, softmatch  = formulary_update(formulary, pricetable)
+    print('Number of medication matches found: {}\nNumber of price changes found: {}\nNumber of soft matches made: {}'.format(mcount, pricechanges, softmatch))
 
     for i in range(0,4):
         print('updated Formulary markdown: {}'.format(updatedformulary[i]._to_markdown()))

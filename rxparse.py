@@ -151,7 +151,7 @@ class FormularyRecord:
         and sets the BLACKLISTED attribute to true.
         """
 
-        namestring = record[0].lower()
+        namestring = record[0]
         if namestring[0] == self._BLACKLIST_:
             print("Matched a tilde!")
             self.BLACKLISTED = True
@@ -171,7 +171,7 @@ class FormularyRecord:
         If no dose/cost matches are found, an empty list is returned.
         """
         
-        dosecoststring = record[1].lower()
+        dosecoststring = record[1]
         match = self._DOSECOSTPATT_.findall(dosecoststring)
 
         return match
@@ -216,7 +216,7 @@ class FormularyRecord:
 
         dosesandcosts_str = ', '.join(dosesandcosts_list)
 
-        markdown = '> {}{} | {} | {}'.format(prefix, self.NAME.capitalize(), dosesandcosts_str, self.SUBCATEGORY)
+        markdown = '> {}{} | {} | {}'.format(prefix, self.NAME, dosesandcosts_str, self.SUBCATEGORY)
  
         return markdown
 
@@ -240,8 +240,8 @@ class InvoiceRecord:
     """
 
     def __init__(self, record):
-        self.NAMEDOSE = record[3].lower()
-        self.COST = record[15].lower()
+        self.NAMEDOSE = record[3]
+        self.COST = record[15]
         self.CATEGORY = record[8]
         self.SUBCATEGORY = None
         self.ITEMNUM = record[2]
@@ -300,24 +300,26 @@ def formulary_update(formulary, pricetable):
 
         # Then loop through each dose/cost pair for the given record
         for k, v in record.PRICETABLE.items():
-            dcost = v[0]
-            dnamedose = k
+            dcost = v[0].lower()
+            dnamedose = k.lower()
             
             # Look up a matching record stored in the invoice-derived pricetable
             for nd, ir in pricetable.items():
+                invnamedose = nd.lower()
+                invcost = ir.COST.lower()
 
                 # If the name and dose are a substring of the pricetable key then we have a match
-                if dnamedose in nd:
+                if dnamedose in invnamedose:
                     match = True
                     mcount += 1
                     
                     # If the corresponding prices do not match then a pricechange has taken place
-                    if dcost != ir.COST:
+                    if dcost != invcost:
                         pricechanges += 1
-                        print('New drug price found for {}!\nFormulary price: {}\nInvoice cost: {}'.format(dnamedose, dcost, ir.COST))
+                        print('New drug price found for {}!\nFormulary price: {}\nInvoice cost: {}'.format(k, v[0], ir.COST))
                         
                         # Modify the PRICETABLE for the given record to reflect the invoice-derived cost
-                        record.PRICETABLE[dnamedose][0] = ir.COST
+                        record.PRICETABLE[k][0] = ir.COST
 
     return mcount, pricechanges, formulary
 

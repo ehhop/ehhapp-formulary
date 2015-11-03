@@ -1,52 +1,17 @@
-"""
-Automatically Update the EHHOP Formulary
-
-## Goal: Compare existing EHHapp Formulary data against new invoices and update prices/costs when necessary.
-
-So this shitty little script takes an invoice.csv file and an rx.md file, and parses 
-them into InvoiceRecord and FormularyRecord objects respectively so that drug prices 
-in one can be checked againt the other. invoice.csv reflects reality and prices from
-rx.md are updated to match. New markdown is then generated for updating the EHHapp.
-
-## TO DO:
-
-- Capture CATEGORY attribute for FormularyRecord objects
-- Output finished Markdown to update the EHHapp Formulary
-- Figure out what drug price updates might be missed by this script
-
-
-EHHapp Formulary Template: This is how we display information about drugs in the EHHapp.
-
-* CATEGORY
-> ~DRUG_NAME | COST_pD (DOSE) | SUBCATEGORY
-
-Invoice Template: This is how information is recorded in monthly invoices.
-
-[Insert Headers Here]
-
-The relevant data fields in the EHHapp Formulary are:
-
-* CATEGORY - e.g. ANALGESICS
-* SUBCATEGORY - e.g. Topical, i.e. "Route of administration"
-* DRUG_NAME
-* APPROVED - if the drug is blacklisted
-* DOSE - dose information, if any
-* COST_pD - cost per dose
-
-### N.B. Some drugs have multiple DOSE and corresponding COST_pD values
-"""
-
 import re
 import csv
 from datetime import datetime
 from collections import namedtuple
 
-"""
-Some functions convert Tabular data to EHHapp Markdown 
-"""
-
+# Functions for reading anding parsing invoices
 def read_csv(filename):
-    """Input to a csv reader object, output a list of parsed lines.
+    """A csv file becomes a list.
+    
+    Each element of the list \
+            is a list corrsponding to a row \
+            containing elements which are \
+            is a strings corresponding to values \
+            for a given row and column.
     """
 
     with open(filename, 'rU') as f:
@@ -59,7 +24,7 @@ def read_csv(filename):
         return csvlines
 
 def filter_loe(loe, value="\d{5}", index=2):
-    """Filter list of enumerables (lol) by value and index.
+    """Filters list of enumerables (loe) by value and index.
 
     A list comprehension is used to check each list at
     position specified by index for a full match with
@@ -274,6 +239,32 @@ def store_formulary(parsedformulary):
 All of these functions should keep track of differences between new and old data
 """
 
+# This function is under construction and is aimed at improving readibility of the comparison function
+def item_match():
+    """Matches items in formulary with items in invoice.
+    """
+    # Then loop through each dose/cost pair for the given record
+    for k, v in record.PRICETABLE.items():
+        dcost = v[0].lower()
+        dnamedose = k.lower()
+        dname = v[1].lower()
+        
+        # Look up a matching record stored in the invoice-derived pricetable
+        for nd, ir in pricetable.items():
+            invnamedose = nd.lower()
+            invcost = ir.COST.lower()
+
+            if dname in invnamedose:
+                softmatch[dname] = invnamedose
+
+            # If the name and dose are a substring of the pricetable key then we have a match
+            if dnamedose in invnamedose:
+                match = True
+                mcount += 1
+
+    return softmatch, mcount
+
+
 def formulary_update(formulary, pricetable):
     """Update drugs in formulary with prices from invoice.
     
@@ -301,27 +292,31 @@ def formulary_update(formulary, pricetable):
             dcost = v[0].lower()
             dnamedose = k.lower()
             dname = v[1].lower()
-            
+            ddose = v[2].lower()
+
             # Look up a matching record stored in the invoice-derived pricetable
             for nd, ir in pricetable.items():
                 invnamedose = nd.lower()
                 invcost = ir.COST.lower()
 
-                if dname in invnamedose:
-                    softmatch += 1
-
                 # If the name and dose are a substring of the pricetable key then we have a match
                 if dnamedose in invnamedose:
+
+                    # TODO: Match anytime both correct dose and name are found in the pricetable key
                     match = True
                     mcount += 1
                     
                     # If the corresponding prices do not match then a pricechange has taken place
                     if dcost != invcost:
                         pricechanges += 1
-                        print('New drug price found for {}!\nFormulary price: {}\nInvoice cost: {}'.format(k, v[0], ir.COST))
+                        # print('New drug price found for {}!\nFormulary price: {}\nInvoice cost: {}'.format(k, v[0], ir.COST))
                         
                         # Modify the PRICETABLE for the given record to reflect the invoice-derived cost
                         record.PRICETABLE[k][0] = ir.COST
+                else:
+                    if dname in invnamedose:
+                        softmatch += 1
+                        print('A soft match was found between Formulary: {} and Invoice: {}'.format(k, nd)) 
 
     return mcount, pricechanges, formulary, softmatch
 

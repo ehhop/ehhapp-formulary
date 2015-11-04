@@ -1,0 +1,35 @@
+# Automatically Update the EHHOP Formulary
+
+## Goal: Compare existing EHHapp Formulary data against new invoices and update prices/costs when necessary.
+
+So this shitty little script takes an invoice.csv file and an rx.md file, and parses 
+them into InvoiceRecord and FormularyRecord objects respectively so that drug prices 
+in one can be checked againt the other. invoice.csv reflects reality and prices from
+rx.md are updated to match. New markdown is then generated for updating the EHHapp.
+
+## TO DO:
+
+- Capture CATEGORY attribute for FormularyRecord objects
+- Output finished Markdown to update the EHHapp Formulary
+- Figure out what drug price updates might be missed by this script
+
+
+EHHapp Formulary Template: This is how we display information about drugs in the EHHapp.
+
+* CATEGORY
+> ~DRUGNAME | COSTpD (DOSE) | SUBCATEGORY
+
+Invoice Template: This is how information is recorded in monthly invoices.
+
+[Insert Headers Here]
+
+The relevant data fields in the EHHapp Formulary are:
+
+* CATEGORY - e.g. ANALGESICS
+* SUBCATEGORY - e.g. Topical, i.e. "Route of administration"
+* DRUGNAME
+* APPROVED - if the drug is blacklisted
+* DOSE - dose information, if any
+* COSTpD - cost per dose
+
+_N.B. Some drugs have multiple DOSE and corresponding COSTpD values_

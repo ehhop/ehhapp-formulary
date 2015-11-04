@@ -1,18 +1,13 @@
-# Automatically Update the EHHOP Formulary
+# README
 
 ## Goal: Compare existing EHHapp Formulary data against new invoices and update prices/costs when necessary.
 
-So this shitty little script takes an invoice.csv file and an rx.md file, and parses 
+So this little script takes an invoice.csv file and an rx.md file, and parses 
 them into InvoiceRecord and FormularyRecord objects respectively so that drug prices 
 in one can be checked againt the other. invoice.csv reflects reality and prices from
 rx.md are updated to match. New markdown is then generated for updating the EHHapp.
 
-## TO DO:
-
-- Capture CATEGORY attribute for FormularyRecord objects
-- Output finished Markdown to update the EHHapp Formulary
-- Figure out what drug price updates might be missed by this script
-
+## Inputs
 
 EHHapp Formulary Template: This is how we display information about drugs in the EHHapp.
 

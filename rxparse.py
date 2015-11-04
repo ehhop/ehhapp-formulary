@@ -238,33 +238,6 @@ def store_formulary(parsedformulary):
 """
 All of these functions should keep track of differences between new and old data
 """
-
-# This function is under construction and is aimed at improving readibility of the comparison function
-def item_match():
-    """Matches items in formulary with items in invoice.
-    """
-    # Then loop through each dose/cost pair for the given record
-    for k, v in record.PRICETABLE.items():
-        dcost = v[0].lower()
-        dnamedose = k.lower()
-        dname = v[1].lower()
-        
-        # Look up a matching record stored in the invoice-derived pricetable
-        for nd, ir in pricetable.items():
-            invnamedose = nd.lower()
-            invcost = ir.COST.lower()
-
-            if dname in invnamedose:
-                softmatch[dname] = invnamedose
-
-            # If the name and dose are a substring of the pricetable key then we have a match
-            if dnamedose in invnamedose:
-                match = True
-                mcount += 1
-
-    return softmatch, mcount
-
-
 def formulary_update(formulary, pricetable):
     """Update drugs in formulary with prices from invoice.
     
@@ -272,14 +245,13 @@ def formulary_update(formulary, pricetable):
     and most recent drug prices per DOSENAME are stored in a dictionary.
     """
     # Keeps track of soft matches
-    softmatch = 0
+    smatchcount = 0
 
     # Keeps track of the number of matches
     mcount = 0
 
-    # Keeps track of price discrepancies
-    pricechanges = 0
-
+    # Match Dictionary
+    matchdict = {}
 
     # Loop through each FormularyRecord
     for record in formulary:
@@ -300,25 +272,30 @@ def formulary_update(formulary, pricetable):
                 invcost = ir.COST.lower()
 
                 # If the name and dose are a substring of the pricetable key then we have a match
-                if dnamedose in invnamedose:
+                if dname in invnamedose:
 
                     # TODO: Match anytime both correct dose and name are found in the pricetable key
-                    match = True
-                    mcount += 1
-                    
-                    # If the corresponding prices do not match then a pricechange has taken place
-                    if dcost != invcost:
-                        pricechanges += 1
-                        # print('New drug price found for {}!\nFormulary price: {}\nInvoice cost: {}'.format(k, v[0], ir.COST))
-                        
-                        # Modify the PRICETABLE for the given record to reflect the invoice-derived cost
-                        record.PRICETABLE[k][0] = ir.COST
-                else:
-                    if dname in invnamedose:
-                        softmatch += 1
-                        print('A soft match was found between Formulary: {} and Invoice: {}'.format(k, nd)) 
+                    softmatch = True
+                    smatchcount += 1
 
-    return mcount, pricechanges, formulary, softmatch
+                    if ddose in invnamedose:
+
+                        match = True
+                        mcount += 1
+
+                        matchdict[k] = (record, ir)
+
+    pricechanges = 0
+
+    for m, n in matchdict.items():
+        frec, irec = n
+        
+        if frec.PRICETABLE[m][0].lower() != irec.COST:
+            pricechanges += 1
+
+            frec.PRICETABLE[m][0] = irec.COST
+
+    return mcount, pricechanges, formulary, smatchcount
 
 """
 ### WORK-IN-PROGRESS

@@ -217,7 +217,7 @@ class FormularyRecord:
         ndc_list = []
 
         for k, v in self.PRICETABLE.items():
-            output_str = '{}\t{}\t{}\t{}'.format(k, v[1], v[2], v[0])
+            output_str = '{},{},{},{}'.format(k, v[1], v[2], v[0])
             ndc_list.append(output_str)
 
         write_str = '\n'.join(ndc_list)

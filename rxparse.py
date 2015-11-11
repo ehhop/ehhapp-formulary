@@ -272,13 +272,12 @@ def formulary_update(formulary, pricetable):
                 invcost = ir.COST.lower()
 
                 # If the name and dose are a substring of the pricetable key then we have a match
-                if dname in invnamedose:
+                if re.match(dname, invnamedose):
 
-                    # TODO: Match anytime both correct dose and name are found in the pricetable key
                     softmatch = True
                     smatchcount += 1
 
-                    if ddose in invnamedose:
+                    if re.search(ddose, invnamedose):
 
                         match = True
                         mcount += 1
@@ -291,6 +290,7 @@ def formulary_update(formulary, pricetable):
         frec, irec = n
         
         if frec.PRICETABLE[m][0].lower() != irec.COST:
+            print("New price found for {} a.k.a. {}\nFormulary price: {}\nInvoice price: {}".format(irec.NAMEDOSE, m, frec.PRICETABLE[m][0], irec.COST))
             pricechanges += 1
 
             frec.PRICETABLE[m][0] = irec.COST

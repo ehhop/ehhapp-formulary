@@ -58,7 +58,7 @@ def store_pricetable(recordlist):
                 COST = record[15], \
                 CATEGORY = record[8], \
                 ITEMNUM = record[2], \
-                REQDATE = converteddatetime)
+                REQDATE = converteddatetime)                
 
         drugname = entry.NAMEDOSE
 
@@ -199,6 +199,19 @@ class FormularyRecord:
             namedose = '{} {}'.format(self.NAME, dose)
             self.PRICETABLE[namedose] = [cost, self.NAME, dose]
 
+    def _to_csv(self):
+        """Generate CSV from PRICETABLE.
+        """
+        ndc_list = []
+
+        for k, v in self.PRICETABLE.items():
+            output_str = '{}\t{}\t{}\t{}'.format(k, v[1], v[2], v[0])
+            ndc_list.append(output_str)
+
+        write_str = '\n'.join(ndc_list)
+
+        return write_str
+        
     def _to_markdown(self):
         """ Generate output string.
 
@@ -266,6 +279,8 @@ def formulary_update(formulary, pricetable):
             dname = v[1].lower()
             ddose = v[2].lower()
 
+            dosepatt = re.compile(r"\b{}".format(ddose))
+
             # Look up a matching record stored in the invoice-derived pricetable
             for nd, ir in pricetable.items():
                 invnamedose = nd.lower()
@@ -277,7 +292,7 @@ def formulary_update(formulary, pricetable):
                     softmatch = True
                     smatchcount += 1
 
-                    if re.search(ddose, invnamedose):
+                    if dosepatt.search(invnamedose):
 
                         match = True
                         mcount += 1
@@ -317,6 +332,14 @@ def to_Markdown(formulary):
     with open("invoice-extract.markdown", "w") as f:
         f.write('\n'.join(output))
 
+def to_CSV(formulary):
+    output = []
+
+    for record in formulary:
+        output.append(record._to_csv())
+
+    with open("formulary_pricetable.csv", "w") as f:
+        f.write('\n'.join(output))
 """
 Janky ass debug functions
 """
@@ -359,6 +382,7 @@ if __name__ == "__main__":
         print('updated Formulary markdown: {}'.format(updatedformulary[i]._to_markdown()))
 
     to_Markdown(updatedformulary)
+    to_CSV(updatedformulary)
 
     # Test BLACKLISTED attribute
 

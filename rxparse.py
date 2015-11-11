@@ -140,6 +140,7 @@ class FormularyRecord:
             (?:\()
             ([^\n]*?)
             (?:\))""", re.X)
+    _NAMEGARBAGE_ = re.compile(r'(.+)(\s\(.+\).*)|(.+)(\s-.*)')
 
     def __init__(self, record):
         self.NAME = self._set_NAMEandBLACKLISTED(record)
@@ -157,9 +158,20 @@ class FormularyRecord:
         """
 
         namestring = record[0]
+        m = self._NAMEGARBAGE_.match(namestring)
+        
         if namestring[0] == self._BLACKLIST_:
             self.BLACKLISTED = True
             name = namestring.lstrip(self._BLACKLIST_)
+        elif m:
+            self.BLACKLISTED = False
+            name = m.group(1)
+            print('{} came from {}'.format(name, namestring))
+
+            if bool(name) == False:
+                name = m.group(3)
+                print('What was once None is now {}'.format(name))
+
         else:
             self.BLACKLISTED = False
             name = namestring

@@ -263,6 +263,29 @@ def store_formulary(parsedformulary):
 """
 All of these functions should keep track of differences between new and old data
 """
+def match_word(word, phrase):
+    '''Determines if 'word' matches any of the full words in the phrase
+    
+    Returns True or False
+    '''
+    return word in phrase.split()
+
+def match_string(string, phrase):
+    '''Determines if any of the full words in 'word_string' match any of the full words in the phrase
+    Returns True or False
+    '''
+    string_split = string.split()
+    for part in string_split:
+        if not match_word(part, phrase):
+            # when a word in the word_string does not have a match in the phrase, is_match returns as False
+            # the loop then moves on to the next word_string
+            is_match = False
+            continue
+        else:
+            is_match = True
+            # if all the words in world_string have a match in the phrase, is_match remains true
+    return is_match
+
 def formulary_update(formulary, pricetable):
     """Update drugs in formulary with prices from invoice.
     

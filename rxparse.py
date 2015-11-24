@@ -323,17 +323,21 @@ def formulary_update(formulary, pricetable):
 
                 # If the name and dose are a substring of the pricetable key then we have a match
                 if re.match(dname, invnamedose):
+                    if match_string(dname, invnamedose): # debugging edge phrases
+                        softmatch = True
+                        smatchcount += 1
 
-                    softmatch = True
-                    smatchcount += 1
+                        if dosepatt.search(invnamedose):
 
-                    if dosepatt.search(invnamedose):
+                            match = True
+                            mcount += 1
 
-                        match = True
-                        mcount += 1
-
-                        matchdict[k] = (record, ir)
-
+                            matchdict[k] = (record, ir)
+                    else: # debugging edge phrases
+                        print('matching...')
+                        print('dname is: ' + str(dname))
+                        print('ddose is: ' + str(ddose))
+                        print('invnamedose is: ' + str(invnamedose))
     pricechanges = 0
 
     for m, n in matchdict.items():

@@ -2,6 +2,8 @@
 
 Takes invoices, parses them, and updates drug prices along with other medication metadata and spits it out as EHHapp-compatible Markdown, and Pharmacy Team-approved data tables.
 
+To run this, you should have a files `invoice.csv` and `rx.md` corresponding to latest invoice and EHHapp formulary respectively.
+
 ## Known Issues
 
 ### Name Matching Problems

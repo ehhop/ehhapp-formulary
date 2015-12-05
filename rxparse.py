@@ -37,9 +37,7 @@ def filter_loe(loe, value="\d{5}", index=2):
 InvRec = namedtuple('InvoiceRecord', ['NAMEDOSE', 'COST', 'CATEGORY', 'ITEMNUM', 'REQDATE'])
 
 def store_pricetable(recordlist):
-    """For each drug record, generate an instance of InvoiceRecord with relevant parameters.
-    
-    Remove duplicates by generating a dictionary based on item number keys.
+    """Store InvoiceRecord instances as values in a dictionary with NAMEDOSE column serving as a key. 
     """
 
     pricetable = {}
@@ -54,7 +52,7 @@ def store_pricetable(recordlist):
                 COST = record[15], \
                 CATEGORY = record[8], \
                 ITEMNUM = record[2], \
-                REQDATE = converteddatetime)                
+                REQDATE = converteddatetime)
 
         drugname = entry.NAMEDOSE
 
@@ -71,7 +69,8 @@ def write_pricetable(pricetable):
     """
 
     with open("pricetable.tsv", "w") as f:
-        writeList = []
+        header_str = "\t".join(list(InvRec._fields))
+        writeList = [header_str]
 
         for k, v in pricetable.items():
             row = "{}\t{}\t{}\t{}\t{}".format(v.ITEMNUM, v.CATEGORY, k, v.COST, v.REQDATE)
@@ -151,6 +150,7 @@ class FormularyRecord:
             ([^\n]*?)
             (?:\))""", re.X)
     _NAMEGARBAGE_ = re.compile(r'(.+)(\s\(.+\).*)|(.+)(\s-.*)')
+    _FEATURES_ = []
 
     def __init__(self, record):
         self.NAME = self._set_NAMEandBLACKLISTED(record)
@@ -219,7 +219,7 @@ class FormularyRecord:
             dose = dosecost[1]
             cost = dosecost[0]
             namedose = '{} {}'.format(self.NAME, dose)
-            self.PRICETABLE[namedose] = [cost, self.NAME, dose]
+            self.PRICETABLE[namedose] = [cost, self.NAME, dose, str(self.BLACKLISTED), self.CATEGORY, self.SUBCATEGORY]
 
     def _to_csv(self):
         """Generate CSV from PRICETABLE.
@@ -227,7 +227,7 @@ class FormularyRecord:
         ndc_list = []
 
         for k, v in self.PRICETABLE.items():
-            output_str = '{},{},{},{}'.format(k, v[1], v[2], v[0])
+            output_str = '{}\t{}\t{}\t{}\t{}\t{}'.format(k, v[1], v[2], v[0], v[3], v[4], v[5])
             ndc_list.append(output_str)
 
         write_str = '\n'.join(ndc_list)
@@ -270,6 +270,19 @@ def store_formulary(parsedformulary):
 
     return formulary
 
+RxRec = namedtuple('FormularyRecord', ['', 'COST', 'CATEGORY', 'ITEMNUM', 'REQDATE'])
+
+def expand_formulary(formulary):
+    '''Expand list of formulary record objects into useful name dose entries.
+    '''
+
+    formularyexpanded = []
+
+    for record in formulary:
+        record._set_PRICETABLE()
+
+    return formularyexpanded
+
 """
 All of these functions should keep track of differences between new and old data
 """
@@ -298,9 +311,6 @@ def match_string(string, phrase):
 
 def formulary_update(formulary, pricetable):
     """Update drugs in formulary with prices from invoice.
-    
-    Called when formulary is a parsed list of lists,
-    and most recent drug prices per DOSENAME are stored in a dictionary.
     """
     # Keeps track of soft matches
     smatchcount = 0
@@ -336,12 +346,12 @@ def formulary_update(formulary, pricetable):
                     if match_string(dname, invnamedose): # debugging edge phrases
                         softmatch = True
                         smatchcount += 1
-
+                        
                         if dosepatt.search(invnamedose):
 
                             match = True
                             mcount += 1
-
+                            
                             matchdict[k] = (record, ir)
                     else: # debugging edge phrases
                         print('matching...')
@@ -395,6 +405,7 @@ Janky ass debug functions
 
 if __name__ == "__main__":
     import sys
+    
     # Processing Invoice
     print('Processing Invoice...\n')
     csvdata = read_csv(str(sys.argv[1]))
@@ -405,7 +416,6 @@ if __name__ == "__main__":
     print(recordlist[0])
     
     pricetable = store_pricetable(recordlist)
-    write_pricetable(pricetable)
     print('Number of Price Table Entries: {}\nEach Entry is a: {}'.format(len(pricetable), type(next(iter(pricetable.values())))))
 
     # Processing Formulary
@@ -433,6 +443,7 @@ if __name__ == "__main__":
 
     to_Markdown(updatedformulary)
     to_CSV(updatedformulary)
+    write_pricetable(pricetable)
 
     # Test BLACKLISTED attribute
 

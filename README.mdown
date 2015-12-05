@@ -12,6 +12,9 @@ Commodity Name
 Requisition Date
 Price
 
+## Formulary Data Structure
+
+
 ## EHHOP Formulary Database
 
 UID

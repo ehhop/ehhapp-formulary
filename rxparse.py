@@ -3,15 +3,11 @@ import csv
 from datetime import datetime
 from collections import namedtuple
 
-# Functions for reading anding parsing invoices
+# Functions for reading and parsing invoices
 def read_csv(filename):
     """A csv file becomes a list.
     
-    Each element of the list \
-            is a list corrsponding to a row \
-            containing elements which are \
-            is a strings corresponding to values \
-            for a given row and column.
+    A list of lists representing rows.
     """
 
     with open(filename, 'rU') as f:
@@ -69,6 +65,20 @@ def store_pricetable(recordlist):
                 pricetable[drugname] = entry
     
     return pricetable
+
+def write_pricetable(pricetable):
+    """ Write as pricetable based on Invoice Records in CSV format.
+    """
+
+    with open("pricetable.tsv", "w") as f:
+        writeList = []
+
+        for k, v in pricetable.items():
+            row = "{}\t{}\t{}\t{}\t{}".format(v.ITEMNUM, v.CATEGORY, k, v.COST, v.REQDATE)
+            writeList.append(row)
+
+        writeString = "\n".join(writeList)
+        f.write(writeString)
 
 """
 Create FormularyRecord objects from EHHapp Markdown so names of drugs and prices can be compared
@@ -395,6 +405,7 @@ if __name__ == "__main__":
     print(recordlist[0])
     
     pricetable = store_pricetable(recordlist)
+    write_pricetable(pricetable)
     print('Number of Price Table Entries: {}\nEach Entry is a: {}'.format(len(pricetable), type(next(iter(pricetable.values())))))
 
     # Processing Formulary

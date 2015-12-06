@@ -2,65 +2,65 @@ import re
 import csv
 from datetime import datetime
 from collections import namedtuple
+import pprint
 
-# Functions for reading and parsing invoices
+# Classes and Functions for reading and parsing invoices
+InvRec = namedtuple('InvoiceRecord', ['NAMEDOSE', 'COST', 'CATEGORY', 'ITEMNUM', 'REQDATE'])
+
 def read_csv(filename):
-    """A csv file becomes a list.
-    
-    A list of lists representing rows.
+    """Read and filter a csv to create a list of drug and price records.
     """
 
     with open(filename, 'rU') as f:
+        
+        # Instantiate csv.reader
         readerobj = csv.reader(f)
-        csvlines = []
+        csvlines = [i for i in readerobj]
+
+        # Filter for drug entries
+        drugitemnumpatt = "\d{5}"
+        itemnumcolumnindex = 2
+        recordlist = [i for i in csvlines if re.fullmatch(drugitemnumpatt, i[itemnumcolumnindex])]
         
-        for item in readerobj:
-            csvlines.append(item)
-        
-        return csvlines
-
-def filter_loe(loe, value="\d{5}", index=2):
-    """Filters list of enumerables (loe) by value and index.
-
-    A list comprehension is used to check each list at
-    position specified by index for a full match with
-    the regular expression pattern specified by value
-    argument.
-
-    value = "\d{5}" by default.
-    """
-
-    filteredlist = [l for l in loe if re.fullmatch(value, l[index])]
-    return filteredlist
-
-# Returns a tuple subclass named InvoiceRecord with named fields NAMEDOSE, etc.
-InvRec = namedtuple('InvoiceRecord', ['NAMEDOSE', 'COST', 'CATEGORY', 'ITEMNUM', 'REQDATE'])
+        return recordlist
 
 def store_pricetable(recordlist):
-    """Store InvoiceRecord instances as values in a dictionary with NAMEDOSE column serving as a key. 
+    """Store only unique and most recent drug and price records.
+ 
+    Parse drug and price records and load them as InvRec(Collections.namedtuple) instances.
+    Store uniquely in a dictionary by using the ITEMNUM field as a key and the InvRec 
+    instance as the value. If an entry with a more recent price is encountered, update the dictionary entry. 
     """
 
+    # Iterate over and parse each drug and price record
     pricetable = {}
-
     for record in recordlist:
 
         # Convert date string to datetime object
         dtformat = '%m/%d/%y %H:%M'
-        converteddatetime = datetime.strptime(record[12], dtformat)
-        
+        datestr = record[12]
+        converteddatetime = datetime.strptime(datestr, dtformat)
+
+
+        # Instantiate namedtuple from using values returned by list indices
         entry = InvRec(NAMEDOSE = record[3], \
                 COST = record[15], \
                 CATEGORY = record[8], \
                 ITEMNUM = record[2], \
                 REQDATE = converteddatetime)
+        
+        # Use NAMEDOSE field as the key 'k' for our dictionary of InvRec objects
+        k = entry.NAMEDOSE
 
-        drugname = entry.NAMEDOSE
 
-        if drugname not in pricetable:
-            pricetable[drugname] = entry
+        # New keys will be stored immediately with their corresponding values.
+        # Otherwise, check incoming entry's requisition date and only update the
+        # dictionary value if it is more recent than the current one.
+        if k not in pricetable:
+            pricetable[k] = entry
         else:
-            if entry.REQDATE > pricetable[drugname].REQDATE:
-                pricetable[drugname] = entry
+            if entry.REQDATE > pricetable[k].REQDATE:
+                pricetable[k] = entry
     
     return pricetable
 
@@ -79,43 +79,32 @@ def write_pricetable(pricetable):
         writeString = "\n".join(writeList)
         f.write(writeString)
 
-"""
-Create FormularyRecord objects from EHHapp Markdown so names of drugs and prices can be compared
-"""
+# Classes and functions for reading and parsing the current EHHOP Formulary
 def read_md(filename):
     """Make md files available as a list of strings (yes these are enumerable).
     """
     with open(filename, 'rU') as f:
-        mdlines = f.readlines()
-        return mdlines
+        rxlines = f.readlines()
 
-def filter_rx(loe, value=">", index=0):
-    """Filter list of enumerables (lol) by value and index.
+        # Provide a regex and variable to keep track of lines denoting drug categories
+        CATEGORYPATT = re.compile('(^\*.+)')
+        category = None
 
-    A list comprehension is used to check each list at
-    position specified by index for a full match with
-    the regular expression pattern specified by value
-    argument.
+        rxfiltered = []
+        CATEGORY_mdown = '*'
+        DRUG_mdown = '>'
+        beginningoflinestrindex = 0
+        
+        for l in rxlines:
+            if l[beginningoflinestrindex] == CATEGORY_mdown:
+                category = l.lstrip('\* ').rstrip
+                continue
+            elif l[beginningoflinestrindex] == formularyrecmarker:
+                rxfiltered.append(l + ' | ' + category)
+            else:
+                continue
 
-    value = "\d{5}" by default.
-    """
-
-    CATEGORYPATT = re.compile('(^\*.+)') 
-
-    filteredlist = []
-    
-    category = None
-
-    for l in loe:
-        if CATEGORYPATT.match(l):
-            category = CATEGORYPATT.match(l).groups()[0].lstrip('\* ')
-            continue
-        elif l[index] == value:
-            filteredlist.append(l + ' | ' + category)
-        else:
-            continue
-
-    return filteredlist
+        return rxfiltered
 
 def parse_mddata(lomd, delimiter="|"):
     """Parse a list of Markdown strings (lomd) to return list of lists (lol).
@@ -270,7 +259,7 @@ def store_formulary(parsedformulary):
 
     return formulary
 
-RxRec = namedtuple('FormularyRecord', ['', 'COST', 'CATEGORY', 'ITEMNUM', 'REQDATE'])
+RxRec = namedtuple('FormularyRecord', ['NAMEDOSE', 'BLACKLISTED', 'DOSE', 'COST', 'CATEGORY', 'SUBCATEGORY'])
 
 def expand_formulary(formulary):
     '''Expand list of formulary record objects into useful name dose entries.
@@ -408,10 +397,7 @@ if __name__ == "__main__":
     
     # Processing Invoice
     print('Processing Invoice...\n')
-    csvdata = read_csv(str(sys.argv[1]))
-    print(len(csvdata))
-    print(csvdata[0])
-    recordlist = filter_loe(csvdata)
+    recordlist = read_csv(str(sys.argv[1]))
     print('Number of Invoice Entries: {}'.format(len(recordlist)))
     print(recordlist[0])
     
@@ -420,12 +406,7 @@ if __name__ == "__main__":
 
     # Processing Formulary
     print('Processing Formulary...\n')
-    mddata = read_md(str(sys.argv[2]))
-    print(len(mddata))
-    print(mddata[0])
-    formularylist = filter_rx(mddata)
-    print(len(formularylist))
-    print(formularylist[0])
+    formularylist = read_md(str(sys.argv[2]))
     formularyparsed = parse_mddata(formularylist)
     print('Number of Formulary Records: {}'.format(len(formularyparsed)))
     print(formularyparsed[0])

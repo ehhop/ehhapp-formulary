@@ -52,7 +52,6 @@ def store_pricetable(recordlist):
         # Use NAMEDOSE field as the key 'k' for our dictionary of InvRec objects
         k = entry.NAMEDOSE
 
-
         # New keys will be stored immediately with their corresponding values.
         # Otherwise, check incoming entry's requisition date and only update the
         # dictionary value if it is more recent than the current one.
@@ -77,47 +76,14 @@ def write_pricetable(pricetable):
             writeList.append(row)
 
         writeString = "\n".join(writeList)
+        
+        # Write to file
         f.write(writeString)
 
+# ---
+# ---
+
 # Classes and functions for reading and parsing the current EHHOP Formulary
-def read_md(filename):
-    """Make md files available as a list of strings (yes these are enumerable).
-    """
-    with open(filename, 'rU') as f:
-        rxlines = f.readlines()
-
-        # Provide a regex and variable to keep track of lines denoting drug categories
-        CATEGORYPATT = re.compile('(^\*.+)')
-        category = None
-
-        rxfiltered = []
-        CATEGORY_mdown = '*'
-        DRUG_mdown = '>'
-        beginningoflinestrindex = 0
-        
-        for l in rxlines:
-            if l[beginningoflinestrindex] == CATEGORY_mdown:
-                category = l.lstrip('\* ').rstrip
-                continue
-            elif l[beginningoflinestrindex] == formularyrecmarker:
-                rxfiltered.append(l + ' | ' + category)
-            else:
-                continue
-
-        return rxfiltered
-
-def parse_mddata(lomd, delimiter="|"):
-    """Parse a list of Markdown strings (lomd) to return list of lists (lol).
-    """
-    mdlol = [string.lstrip("> ").rstrip().split(delimiter) for string in lomd]
-
-    parsedformulary = []
-    for item in mdlol:
-        item = [s.strip() for s in item]
-        parsedformulary.append(item)
-
-    return parsedformulary
-
 class FormularyRecord:
     """Define a class that corresponds to a formulary entry.
 
@@ -247,6 +213,55 @@ class FormularyRecord:
         markdown = '> {}{} | {} | {}'.format(prefix, self.NAME, dosesandcosts_str, self.SUBCATEGORY)
  
         return markdown
+
+def read_md(filename):
+    '''Read Markdown Formulary and parse into a list containing strings for each drug.
+
+    Each list item is a string in EHHapp Markdown format:
+
+    A line that denotes the drug category of all drug lines following it looks like this:
+
+        * CATEGORY
+
+    A line that contains a drug, its prices, doses, subcategories, blacklisted status, and potentially other metadata looks like this.
+
+        > ~DRUGNAME (brandname) - other metadata | COSTpD (DOSE) | SUBCATEGORY
+    '''
+    with open(filename, 'rU') as f:
+        rxlines = f.readlines()
+        
+        rxfiltered = []
+
+        # Provide a match string and variable to keep track of lines denoting drug classes
+        CATEGORY_mdown = '*'
+        category = None
+        
+        # Provide strings to match lines corresponding to drugs 
+        DRUG_mdown = '>'
+        beginningoflinestrindex = 0
+        
+        for l in rxlines:
+            if l[beginningoflinestrindex] == CATEGORY_mdown:
+                category = l.lstrip('\* ').rstrip
+                continue
+            elif l[beginningoflinestrindex] == DRUG_mdown:
+                rxfiltered.append(l + ' | ' + category)
+            else:
+                continue
+
+        return rxfiltered
+
+def parse_mddata(rxfiltered, delimiter="|"):
+    """Parse a list of Markdown strings (lomd) to return list of lists (lol).
+    """
+    mdlol = [string.lstrip("> ").rstrip().split(delimiter) for string in rxfiltered]
+
+    parsedformulary = []
+    for item in mdlol:
+        item = [s.strip() for s in item]
+        parsedformulary.append(item)
+
+    return parsedformulary
 
 def store_formulary(parsedformulary):
     """Store a bunch of formulary record objects in a list.

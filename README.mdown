@@ -14,6 +14,11 @@ Price
 
 ## Formulary Data Structure
 
+"BLACKLISTED DNAME METADATA"
+[COST (DOSE, ...), ...]
+SUBCATEGORY
+
+CATEGORY
 
 ## EHHOP Formulary Database
 

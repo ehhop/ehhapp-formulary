@@ -2,7 +2,6 @@ import re
 import csv
 from datetime import datetime
 from collections import namedtuple
-import pprint
 
 # Classes and Functions for reading and parsing invoices
 InvRec = namedtuple('InvoiceRecord', ['NAMEDOSE', 'COST', 'CATEGORY', 'ITEMNUM',\
@@ -275,19 +274,6 @@ def store_formulary(parsedformulary):
         formulary.append(FormularyRecord(record))
 
     return formulary
-
-RxRec = namedtuple('FormularyRecord', ['NAMEDOSE', 'BLACKLISTED', 'DOSE', 'COST', 'CATEGORY', 'SUBCATEGORY'])
-
-def expand_formulary(formulary):
-    '''Expand list of formulary record objects into useful name dose entries.
-    '''
-
-    formularyexpanded = []
-
-    for record in formulary:
-        record._set_PRICETABLE()
-
-    return formularyexpanded
 
 """
 All of these functions should keep track of differences between new and old data

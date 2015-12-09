@@ -368,6 +368,8 @@ def formulary_update(formulary, pricetable):
 These functions control output to Markdown
 """
 def to_Markdown(formulary):
+    '''Outputs updated Formulary database to Markdown.
+    '''
     output = []
     
     category = formulary[0].CATEGORY
@@ -380,17 +382,20 @@ def to_Markdown(formulary):
 
         output.append(record._to_markdown())
 
-    with open("invoice-extract.markdown", "w") as f:
+    with open("Formulary_updated.markdown", "w") as f:
         f.write('\n'.join(output))
 
 def to_CSV(formulary):
+    '''Outputs updated Formulary database to CSV
+    '''
     output = []
 
     for record in formulary:
         output.append(record._to_csv())
 
-    with open("formulary_pricetable.csv", "w") as f:
+    with open("Formulary_updated.csv", "w") as f:
         f.write('\n'.join(output))
+
 """
 Janky ass debug functions
 """

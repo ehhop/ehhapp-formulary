@@ -1,4 +1,8 @@
-# Other Files
+# Output files
+Formulary_updated.*
+pricetable.tsv
+
+# Input files
 invoice.csv
 rx.md
 

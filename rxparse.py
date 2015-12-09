@@ -3,123 +3,88 @@ import csv
 from datetime import datetime
 from collections import namedtuple
 
-# Functions for reading anding parsing invoices
+# Classes and Functions for reading and parsing invoices
+InvRec = namedtuple('InvoiceRecord', ['NAMEDOSE', 'COST', 'CATEGORY', 'ITEMNUM',\
+        'REQDATE'])
+
 def read_csv(filename):
-    """A csv file becomes a list.
-    
-    Each element of the list \
-            is a list corrsponding to a row \
-            containing elements which are \
-            is a strings corresponding to values \
-            for a given row and column.
+    """Read and filter a csv to create a list of drug and price records.
     """
 
     with open(filename, 'rU') as f:
+        
+        # Instantiate csv.reader
         readerobj = csv.reader(f)
-        csvlines = []
+        csvlines = [i for i in readerobj]
+
+        # Filter for drug entries
+        drugitemnumpatt = "\d{5}"
+        itemnumcolumnindex = 2
+        recordlist = [i for i in csvlines if re.fullmatch(drugitemnumpatt,\
+                i[itemnumcolumnindex])]
         
-        for item in readerobj:
-            csvlines.append(item)
-        
-        return csvlines
-
-def filter_loe(loe, value="\d{5}", index=2):
-    """Filters list of enumerables (loe) by value and index.
-
-    A list comprehension is used to check each list at
-    position specified by index for a full match with
-    the regular expression pattern specified by value
-    argument.
-
-    value = "\d{5}" by default.
-    """
-
-    filteredlist = [l for l in loe if re.fullmatch(value, l[index])]
-    return filteredlist
-
-# Returns a tuple subclass named InvoiceRecord with named fields NAMEDOSE, etc.
-InvRec = namedtuple('InvoiceRecord', ['NAMEDOSE', 'COST', 'CATEGORY', 'ITEMNUM', 'REQDATE'])
+        return recordlist
 
 def store_pricetable(recordlist):
-    """For each drug record, generate an instance of InvoiceRecord with relevant parameters.
-    
-    Remove duplicates by generating a dictionary based on item number keys.
+    """Store only unique and most recent drug and price records.
+ 
+    Parse drug and price records and load them as InvRec(Collections.namedtuple) instances.
+    Store uniquely in a dictionary by using the ITEMNUM field as a key and the InvRec 
+    instance as the value. If an entry with a more recent price is encountered, update the dictionary entry. 
     """
 
+    # Iterate over and parse each drug and price record
     pricetable = {}
-
     for record in recordlist:
 
         # Convert date string to datetime object
         dtformat = '%m/%d/%y %H:%M'
-        converteddatetime = datetime.strptime(record[12], dtformat)
-        
+        datestr = record[12]
+        converteddatetime = datetime.strptime(datestr, dtformat)
+
+
+        # Instantiate namedtuple from using values returned by list indices
         entry = InvRec(NAMEDOSE = record[3], \
                 COST = record[15], \
                 CATEGORY = record[8], \
                 ITEMNUM = record[2], \
-                REQDATE = converteddatetime)                
+                REQDATE = converteddatetime)
+        
+        # Use NAMEDOSE field as the key 'k' for our dictionary of InvRec objects
+        k = entry.NAMEDOSE
 
-        drugname = entry.NAMEDOSE
-
-        if drugname not in pricetable:
-            pricetable[drugname] = entry
+        # New keys will be stored immediately with their corresponding values.
+        # Otherwise, check incoming entry's requisition date and only update the
+        # dictionary value if it is more recent than the current one.
+        if k not in pricetable:
+            pricetable[k] = entry
         else:
-            if entry.REQDATE > pricetable[drugname].REQDATE:
-                pricetable[drugname] = entry
+            if entry.REQDATE > pricetable[k].REQDATE:
+                pricetable[k] = entry
     
     return pricetable
 
-"""
-Create FormularyRecord objects from EHHapp Markdown so names of drugs and prices can be compared
-"""
-def read_md(filename):
-    """Make md files available as a list of strings (yes these are enumerable).
-    """
-    with open(filename, 'rU') as f:
-        mdlines = f.readlines()
-        return mdlines
-
-def filter_rx(loe, value=">", index=0):
-    """Filter list of enumerables (lol) by value and index.
-
-    A list comprehension is used to check each list at
-    position specified by index for a full match with
-    the regular expression pattern specified by value
-    argument.
-
-    value = "\d{5}" by default.
+def write_pricetable(pricetable):
+    """ Write as pricetable based on Invoice Records in CSV format.
     """
 
-    CATEGORYPATT = re.compile('(^\*.+)') 
+    with open("pricetable.tsv", "w") as f:
+        header_str = "\t".join(list(InvRec._fields))
+        writeList = [header_str]
 
-    filteredlist = []
-    
-    category = None
+        for k, v in pricetable.items():
+            row = "{}\t{}\t{}\t{}\t{}".format(v.ITEMNUM, v.CATEGORY, k, v.COST, v.REQDATE)
+            writeList.append(row)
 
-    for l in loe:
-        if CATEGORYPATT.match(l):
-            category = CATEGORYPATT.match(l).groups()[0].lstrip('\* ')
-            continue
-        elif l[index] == value:
-            filteredlist.append(l + ' | ' + category)
-        else:
-            continue
+        writeString = "\n".join(writeList)
+        
+        # Write to file
+        f.write(writeString)
 
-    return filteredlist
+# ---
+# ---
 
-def parse_mddata(lomd, delimiter="|"):
-    """Parse a list of Markdown strings (lomd) to return list of lists (lol).
-    """
-    mdlol = [string.lstrip("> ").rstrip().split(delimiter) for string in lomd]
-
-    parsedformulary = []
-    for item in mdlol:
-        item = [s.strip() for s in item]
-        parsedformulary.append(item)
-
-    return parsedformulary
-
+# Classes and functions for reading and parsing the current EHHOP Formulary
 class FormularyRecord:
     """Define a class that corresponds to a formulary entry.
 
@@ -141,6 +106,7 @@ class FormularyRecord:
             ([^\n]*?)
             (?:\))""", re.X)
     _NAMEGARBAGE_ = re.compile(r'(.+)(\s\(.+\).*)|(.+)(\s-.*)')
+    _FEATURES_ = []
 
     def __init__(self, record):
         self.NAME = self._set_NAMEandBLACKLISTED(record)
@@ -209,7 +175,7 @@ class FormularyRecord:
             dose = dosecost[1]
             cost = dosecost[0]
             namedose = '{} {}'.format(self.NAME, dose)
-            self.PRICETABLE[namedose] = [cost, self.NAME, dose]
+            self.PRICETABLE[namedose] = [cost, self.NAME, dose, str(self.BLACKLISTED), self.CATEGORY, self.SUBCATEGORY]
 
     def _to_csv(self):
         """Generate CSV from PRICETABLE.
@@ -217,7 +183,7 @@ class FormularyRecord:
         ndc_list = []
 
         for k, v in self.PRICETABLE.items():
-            output_str = '{},{},{},{}'.format(k, v[1], v[2], v[0])
+            output_str = '{}\t{}\t{}\t{}\t{}\t{}'.format(k, v[1], v[2], v[0], v[3], v[4], v[5])
             ndc_list.append(output_str)
 
         write_str = '\n'.join(ndc_list)
@@ -248,6 +214,55 @@ class FormularyRecord:
         markdown = '> {}{} | {} | {}'.format(prefix, self.NAME, dosesandcosts_str, self.SUBCATEGORY)
  
         return markdown
+
+def read_md(filename):
+    '''Read Markdown Formulary and parse into a list containing strings for each drug.
+
+    Each list item is a string in EHHapp Markdown format:
+
+    A line that denotes the drug category of all drug lines following it looks like this:
+
+        * CATEGORY
+
+    A line that contains a drug, its prices, doses, subcategories, blacklisted status, and potentially other metadata looks like this.
+
+        > ~DRUGNAME (brandname) - other metadata | COSTpD (DOSE) | SUBCATEGORY
+    '''
+    with open(filename, 'rU') as f:
+        rxlines = f.readlines()
+        
+        rxfiltered = []
+
+        # Provide a match string and variable to keep track of lines denoting drug classes
+        CATEGORY_mdown = '*'
+        category = None
+        
+        # Provide strings to match lines corresponding to drugs 
+        DRUG_mdown = '>'
+        beginningoflinestrindex = 0
+        
+        for l in rxlines:
+            if l[beginningoflinestrindex] == CATEGORY_mdown:
+                category = l.lstrip('\* ').rstrip()
+                continue
+            elif l[beginningoflinestrindex] == DRUG_mdown:
+                rxfiltered.append(l + ' | ' + category)
+            else:
+                continue
+
+        return rxfiltered
+
+def parse_mddata(rxfiltered, delimiter="|"):
+    """Parse a list of Markdown strings (lomd) to return list of lists (lol).
+    """
+    mdlol = [string.lstrip("> ").rstrip().split(delimiter) for string in rxfiltered]
+
+    parsedformulary = []
+    for item in mdlol:
+        item = [s.strip() for s in item]
+        parsedformulary.append(item)
+
+    return parsedformulary
 
 def store_formulary(parsedformulary):
     """Store a bunch of formulary record objects in a list.
@@ -288,9 +303,6 @@ def match_string(string, phrase):
 
 def formulary_update(formulary, pricetable):
     """Update drugs in formulary with prices from invoice.
-    
-    Called when formulary is a parsed list of lists,
-    and most recent drug prices per DOSENAME are stored in a dictionary.
     """
     # Keeps track of soft matches
     smatchcount = 0
@@ -326,12 +338,12 @@ def formulary_update(formulary, pricetable):
                     if match_string(dname, invnamedose): # debugging edge phrases
                         softmatch = True
                         smatchcount += 1
-
+                        
                         if dosepatt.search(invnamedose):
 
                             match = True
                             mcount += 1
-
+                            
                             matchdict[k] = (record, ir)
                     else: # debugging edge phrases
                         print('matching...')
@@ -356,6 +368,8 @@ def formulary_update(formulary, pricetable):
 These functions control output to Markdown
 """
 def to_Markdown(formulary):
+    '''Outputs updated Formulary database to Markdown.
+    '''
     output = []
     
     category = formulary[0].CATEGORY
@@ -368,29 +382,30 @@ def to_Markdown(formulary):
 
         output.append(record._to_markdown())
 
-    with open("invoice-extract.markdown", "w") as f:
+    with open("Formulary_updated.markdown", "w") as f:
         f.write('\n'.join(output))
 
 def to_CSV(formulary):
+    '''Outputs updated Formulary database to CSV
+    '''
     output = []
 
     for record in formulary:
         output.append(record._to_csv())
 
-    with open("formulary_pricetable.csv", "w") as f:
+    with open("Formulary_updated.csv", "w") as f:
         f.write('\n'.join(output))
+
 """
 Janky ass debug functions
 """
 
 if __name__ == "__main__":
     import sys
+    
     # Processing Invoice
     print('Processing Invoice...\n')
-    csvdata = read_csv(str(sys.argv[1]))
-    print(len(csvdata))
-    print(csvdata[0])
-    recordlist = filter_loe(csvdata)
+    recordlist = read_csv(str(sys.argv[1]))
     print('Number of Invoice Entries: {}'.format(len(recordlist)))
     print(recordlist[0])
     
@@ -399,12 +414,7 @@ if __name__ == "__main__":
 
     # Processing Formulary
     print('Processing Formulary...\n')
-    mddata = read_md(str(sys.argv[2]))
-    print(len(mddata))
-    print(mddata[0])
-    formularylist = filter_rx(mddata)
-    print(len(formularylist))
-    print(formularylist[0])
+    formularylist = read_md(str(sys.argv[2]))
     formularyparsed = parse_mddata(formularylist)
     print('Number of Formulary Records: {}'.format(len(formularyparsed)))
     print(formularyparsed[0])
@@ -422,6 +432,7 @@ if __name__ == "__main__":
 
     to_Markdown(updatedformulary)
     to_CSV(updatedformulary)
+    write_pricetable(pricetable)
 
     # Test BLACKLISTED attribute
 

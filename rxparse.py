@@ -5,7 +5,8 @@ from collections import namedtuple
 import pprint
 
 # Classes and Functions for reading and parsing invoices
-InvRec = namedtuple('InvoiceRecord', ['NAMEDOSE', 'COST', 'CATEGORY', 'ITEMNUM', 'REQDATE'])
+InvRec = namedtuple('InvoiceRecord', ['NAMEDOSE', 'COST', 'CATEGORY', 'ITEMNUM',\
+        'REQDATE'])
 
 def read_csv(filename):
     """Read and filter a csv to create a list of drug and price records.
@@ -20,7 +21,8 @@ def read_csv(filename):
         # Filter for drug entries
         drugitemnumpatt = "\d{5}"
         itemnumcolumnindex = 2
-        recordlist = [i for i in csvlines if re.fullmatch(drugitemnumpatt, i[itemnumcolumnindex])]
+        recordlist = [i for i in csvlines if re.fullmatch(drugitemnumpatt,\
+                i[itemnumcolumnindex])]
         
         return recordlist
 
@@ -242,7 +244,7 @@ def read_md(filename):
         
         for l in rxlines:
             if l[beginningoflinestrindex] == CATEGORY_mdown:
-                category = l.lstrip('\* ').rstrip
+                category = l.lstrip('\* ').rstrip()
                 continue
             elif l[beginningoflinestrindex] == DRUG_mdown:
                 rxfiltered.append(l + ' | ' + category)

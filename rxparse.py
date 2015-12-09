@@ -10,7 +10,7 @@ InvRec = namedtuple('InvoiceRecord', ['NAMEDOSE', 'COST', 'CATEGORY', 'ITEMNUM',
 def read_csv(filename):
     """Read and filter a csv to create a list of drug and price records.
     """
-
+    # Open, read, and filter
     with open(filename, 'rU') as f:
         
         # Instantiate csv.reader
@@ -393,7 +393,7 @@ def to_CSV(formulary):
     for record in formulary:
         output.append(record._to_csv())
 
-    with open("Formulary_updated.csv", "w") as f:
+    with open("Formulary_updated.tsv", "w") as f:
         f.write('\n'.join(output))
 
 """

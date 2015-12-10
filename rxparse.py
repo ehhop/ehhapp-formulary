@@ -20,12 +20,13 @@ def read_csv(filename):
         # Filter for drug entries
         drugitemnumpatt = "\d{5}"
         itemnumcolumnindex = 2
-        recordlist = [i for i in csvlines if re.fullmatch(drugitemnumpatt,\
+        
+        invoice = [i for i in csvlines if re.fullmatch(drugitemnumpatt,\
                 i[itemnumcolumnindex])]
         
-        return recordlist
+        return invoice
 
-def store_pricetable(recordlist):
+def store_pricetable(invoice):
     """Store only unique and most recent drug and price records.
  
     Parse drug and price records and load them as InvRec(Collections.namedtuple) instances.
@@ -35,21 +36,21 @@ def store_pricetable(recordlist):
 
     # Iterate over and parse each drug and price record
     pricetable = {}
-    for record in recordlist:
+    for item in invoice:
 
         # Convert date string to datetime object
         dtformat = '%m/%d/%y %H:%M'
-        datestr = record[12]
+        datestr = item[12]
         converteddatetime = datetime.strptime(datestr, dtformat)
 
 
         # Instantiate namedtuple from using values returned by list indices
-        entry = InvRec(NAMEDOSE = record[3], \
+        entry = InvRec(NAMEDOSE = item[3], \
                 NAME = "NaN", \
                 DOSE = "NaN", \
-                COST = record[15], \
-                CATEGORY = record[8], \
-                ITEMNUM = record[2], \
+                COST = item[15], \
+                CATEGORY = item[8], \
+                ITEMNUM = item[2], \
                 REQDATE = converteddatetime)
         
         # Use NAMEDOSE field as the key 'k' for our dictionary of InvRec objects

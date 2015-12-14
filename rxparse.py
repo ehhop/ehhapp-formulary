@@ -345,11 +345,13 @@ def formulary_update(formulary, pricetable):
                             mcount += 1
                             
                             matchdict[k] = (record, ir)
+                            
                     else: # debugging edge phrases
-                        print('matching...')
-                        print('dname is: ' + str(dname))
-                        print('ddose is: ' + str(ddose))
-                        print('invnamedose is: ' + str(invnamedose))
+                    	if dosepatt.search(invnamedose):
+	                        print('matching...')
+	                        print('dname is: ' + str(dname))
+	                        print('ddose is: ' + str(ddose))
+	                        print('invnamedose is: ' + str(invnamedose))
     pricechanges = 0
 
     for m, n in matchdict.items():

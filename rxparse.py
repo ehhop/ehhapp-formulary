@@ -4,13 +4,13 @@ from datetime import datetime
 from collections import namedtuple
 
 # Classes and Functions for reading and parsing invoices
-InvRec = namedtuple('InvoiceRecord', ['NAMEDOSE', 'COST', 'CATEGORY', 'ITEMNUM',\
+InvRec = namedtuple('InvoiceRecord', ['NAMEDOSE', 'NAME', 'DOSE', 'COST', 'CATEGORY', 'ITEMNUM',\
         'REQDATE'])
 
 def read_csv(filename):
     """Read and filter a csv to create a list of drug and price records.
     """
-
+    # Open, read, and filter
     with open(filename, 'rU') as f:
         
         # Instantiate csv.reader
@@ -20,12 +20,13 @@ def read_csv(filename):
         # Filter for drug entries
         drugitemnumpatt = "\d{5}"
         itemnumcolumnindex = 2
-        recordlist = [i for i in csvlines if re.fullmatch(drugitemnumpatt,\
+        
+        invoice = [i for i in csvlines if re.fullmatch(drugitemnumpatt,\
                 i[itemnumcolumnindex])]
         
-        return recordlist
+        return invoice
 
-def store_pricetable(recordlist):
+def store_pricetable(invoice):
     """Store only unique and most recent drug and price records.
  
     Parse drug and price records and load them as InvRec(Collections.namedtuple) instances.
@@ -35,19 +36,21 @@ def store_pricetable(recordlist):
 
     # Iterate over and parse each drug and price record
     pricetable = {}
-    for record in recordlist:
+    for item in invoice:
 
         # Convert date string to datetime object
         dtformat = '%m/%d/%y %H:%M'
-        datestr = record[12]
+        datestr = item[12]
         converteddatetime = datetime.strptime(datestr, dtformat)
 
 
         # Instantiate namedtuple from using values returned by list indices
-        entry = InvRec(NAMEDOSE = record[3], \
-                COST = record[15], \
-                CATEGORY = record[8], \
-                ITEMNUM = record[2], \
+        entry = InvRec(NAMEDOSE = item[3], \
+                NAME = "NaN", \
+                DOSE = "NaN", \
+                COST = item[15], \
+                CATEGORY = item[8], \
+                ITEMNUM = item[2], \
                 REQDATE = converteddatetime)
         
         # Use NAMEDOSE field as the key 'k' for our dictionary of InvRec objects
@@ -175,7 +178,14 @@ class FormularyRecord:
             dose = dosecost[1]
             cost = dosecost[0]
             namedose = '{} {}'.format(self.NAME, dose)
-            self.PRICETABLE[namedose] = [cost, self.NAME, dose, str(self.BLACKLISTED), self.CATEGORY, self.SUBCATEGORY]
+            # self.PRICETABLE[namedose] = [cost, self.NAME, dose, str(self.BLACKLISTED), self.CATEGORY, self.SUBCATEGORY]
+            self.PRICETABLE[namedose] = InvRec(NAMEDOSE = namedose,\
+                    NAME = self.NAME,\
+                    DOSE = dose,\
+                    COST = cost,\
+                    CATEGORY = self.CATEGORY,\
+                    ITEMNUM = "NaN",\
+                    REQDATE = "NaN")
 
     def _to_csv(self):
         """Generate CSV from PRICETABLE.
@@ -183,7 +193,7 @@ class FormularyRecord:
         ndc_list = []
 
         for k, v in self.PRICETABLE.items():
-            output_str = '{}\t{}\t{}\t{}\t{}\t{}'.format(k, v[1], v[2], v[0], v[3], v[4], v[5])
+            output_str = '{}\t{}\t{}\t{}\t{}'.format(k, v.COST, v.CATEGORY, v.ITEMNUM, v.REQDATE)
             ndc_list.append(output_str)
 
         write_str = '\n'.join(ndc_list)
@@ -206,7 +216,7 @@ class FormularyRecord:
         dosesandcosts_list = []
         
         for k, v in self.PRICETABLE.items():
-            output_str = '{} ({})'.format(v[0], v[2])
+            output_str = '{} ({})'.format(v.COST, v.DOSE)
             dosesandcosts_list.append(output_str)
 
         dosesandcosts_str = ', '.join(dosesandcosts_list)
@@ -301,6 +311,13 @@ def match_string(string, phrase):
             # if all the words in world_string have a match in the phrase, is_match remains true
     return is_match
 
+def price_disc(dcost, invcost):
+    if dcost != invcost:
+        new_price = True
+    else:
+        new_price = False
+    return new_price
+        
 def formulary_update(formulary, pricetable):
     """Update drugs in formulary with prices from invoice.
     """
@@ -310,8 +327,8 @@ def formulary_update(formulary, pricetable):
     # Keeps track of the number of matches
     mcount = 0
 
-    # Match Dictionary
-    matchdict = {}
+    # Keeps track of the number of price changes
+    pricechanges = 0
 
     # Loop through each FormularyRecord
     for record in formulary:
@@ -321,10 +338,10 @@ def formulary_update(formulary, pricetable):
 
         # Then loop through each dose/cost pair for the given record
         for k, v in record.PRICETABLE.items():
-            dcost = v[0].lower()
+            dcost = v.COST.lower()
             dnamedose = k.lower()
-            dname = v[1].lower()
-            ddose = v[2].lower()
+            dname = v.NAME.lower()
+            ddose = v.DOSE.lower()
 
             dosepatt = re.compile(r"\b{}".format(ddose))
 
@@ -344,23 +361,18 @@ def formulary_update(formulary, pricetable):
                             match = True
                             mcount += 1
                             
-                            matchdict[k] = (record, ir)
+                            if price_disc(dcost, invcost):
+                                pricechanges += 1
+                                record.PRICETABLE[k] = v._replace(COST = invcost)
+                                print("New price found for {} a.k.a. {}\nFormulary price: {}\nInvoice price: {}".format(invnamedose, k, dcost, invcost))
+                                print("Formulary updated so price is now {}".format(record.PRICETABLE[k].COST))
+
                     else: # debugging edge phrases
                         print('matching...')
                         print('dname is: ' + str(dname))
                         print('ddose is: ' + str(ddose))
                         print('invnamedose is: ' + str(invnamedose))
-    pricechanges = 0
-
-    for m, n in matchdict.items():
-        frec, irec = n
-        
-        if frec.PRICETABLE[m][0].lower() != irec.COST:
-            print("New price found for {} a.k.a. {}\nFormulary price: {}\nInvoice price: {}".format(irec.NAMEDOSE, m, frec.PRICETABLE[m][0], irec.COST))
-            pricechanges += 1
-
-            frec.PRICETABLE[m][0] = irec.COST
-
+     
     return mcount, pricechanges, formulary, smatchcount
 
 """
@@ -385,7 +397,7 @@ def to_Markdown(formulary):
     with open("Formulary_updated.markdown", "w") as f:
         f.write('\n'.join(output))
 
-def to_CSV(formulary):
+def to_TSV(formulary):
     '''Outputs updated Formulary database to CSV
     '''
     output = []
@@ -393,7 +405,7 @@ def to_CSV(formulary):
     for record in formulary:
         output.append(record._to_csv())
 
-    with open("Formulary_updated.csv", "w") as f:
+    with open("Formulary_updated.tsv", "w") as f:
         f.write('\n'.join(output))
 
 """
@@ -431,7 +443,7 @@ if __name__ == "__main__":
         print('updated Formulary markdown: {}'.format(updatedformulary[i]._to_markdown()))
 
     to_Markdown(updatedformulary)
-    to_CSV(updatedformulary)
+    to_TSV(updatedformulary)
     write_pricetable(pricetable)
 
     # Test BLACKLISTED attribute

@@ -337,15 +337,18 @@ def formulary_update(formulary, pricetable):
                             print('\nFound a poor match...')
                             print('Formulary name and dose is: '+str(dname)+' '+ str(ddose))
                             print('Invoice name and dose is: '+str(invnamedose))
-                            user_input = input('Are these the same medication?\nPlease type \'y\' or \'n\': ')
                             
+                            user_input = input('Are these the same medication?\nPlease type \'y\' or \'n\': ')
+
+                            while not user_input == 'y' and not user_input == 'n':
+                                user_input = input('Please try again. Are these the same medication?\nPlease type \'y\' or \'n\': ') # error check for user input
+
                             if user_input == 'y':
                                 match = True
                                 mcount += 1
                                 matchdict[k] = (record, ir)
-
                             elif user_input == 'n':
-                                print('This medication price will not be updated.')
+                                print('This medication price will not be changed.')
 
     pricechanges = 0
 

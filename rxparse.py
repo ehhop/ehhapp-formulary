@@ -302,7 +302,6 @@ def formulary_update(formulary, pricetable):
 
     # Loop through each FormularyRecord
     for record in formulary:
-
         # Set the PRICETABLE attribute
         record._set_PRICETABLE()
 
@@ -320,9 +319,9 @@ def formulary_update(formulary, pricetable):
                 invnamedose = nd.lower()
                 invcost = ir.COST.lower()
 
-                # If the name and dose are a substring of the pricetable key then we have a match
-                if re.match(dname, invnamedose):
-                    if match_string(dname, invnamedose): # debugging edge phrases
+                # If the name and dose are a subset of the pricetable key then we have a match
+                if re.search(dname, invnamedose): # capture edge cases
+                    if match_string(dname, invnamedose):
                         softmatch = True
                         smatchcount += 1
                         
@@ -333,12 +332,21 @@ def formulary_update(formulary, pricetable):
                             
                             matchdict[k] = (record, ir)
                             
-                    else: # debugging edge phrases
-                    	if dosepatt.search(invnamedose):
-	                        print('\nNot matched...')
-	                        print('dname is: ' + str(dname))
-	                        print('ddose is: ' + str(ddose))
-	                        print('invnamedose is: ' + str(invnamedose))
+                    else: # user input on edge cases
+                        if dosepatt.search(invnamedose):
+                            print('\nFound a poor match...')
+                            print('Formulary name and dose is: '+str(dname)+' '+ str(ddose))
+                            print('Invoice name and dose is: '+str(invnamedose))
+                            user_input = input('Are these the same medication?\nPlease type \'y\' or \'n\': ')
+                            
+                            if user_input == 'y':
+                                match = True
+                                mcount += 1
+                                matchdict[k] = (record, ir)
+
+                            elif user_input == 'n':
+                                print('This medication price will not be updated.')
+
     pricechanges = 0
 
     for m, n in matchdict.items():

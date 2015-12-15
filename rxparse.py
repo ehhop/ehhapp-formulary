@@ -288,27 +288,14 @@ def store_formulary(parsedformulary):
 """
 All of these functions should keep track of differences between new and old data
 """
-def match_word(word, phrase):
-    '''Determines if 'word' matches any of the full words in the phrase
-    
-    Returns True or False
-    '''
-    return word in phrase.split()
-
 def match_string(string, phrase):
-    '''Determines if any of the full words in 'word_string' match any of the full words in the phrase
+    '''Determines if any of the full words in 'string' match any of the full words in the phrase
     Returns True or False
     '''
     string_split = string.split()
-    for part in string_split:
-        if not match_word(part, phrase):
-            # when a word in the word_string does not have a match in the phrase, is_match returns as False
-            # the loop then moves on to the next word_string
-            is_match = False
-            continue
-        else:
-            is_match = True
-            # if all the words in world_string have a match in the phrase, is_match remains true
+    phrase_split = phrase.split()
+    is_match = set(string_split) < set(phrase_split)
+
     return is_match
 
 def price_disc(dcost, invcost):
@@ -332,7 +319,6 @@ def formulary_update(formulary, pricetable):
 
     # Loop through each FormularyRecord
     for record in formulary:
-
         # Set the PRICETABLE attribute
         record._set_PRICETABLE()
 
@@ -349,10 +335,11 @@ def formulary_update(formulary, pricetable):
             for nd, ir in pricetable.items():
                 invnamedose = nd.lower()
                 invcost = ir.COST.lower()
+                itemnum = ir.ITEMNUM
 
-                # If the name and dose are a substring of the pricetable key then we have a match
-                if re.match(dname, invnamedose):
-                    if match_string(dname, invnamedose): # debugging edge phrases
+                # If the name and dose are a subset of the pricetable key then we have a match
+                if re.search(dname, invnamedose): # capture edge cases
+                    if match_string(dname, invnamedose):
                         softmatch = True
                         smatchcount += 1
                         
@@ -363,16 +350,28 @@ def formulary_update(formulary, pricetable):
                             
                             if price_disc(dcost, invcost):
                                 pricechanges += 1
-                                record.PRICETABLE[k] = v._replace(COST = invcost)
+                                record.PRICETABLE[k] = v._replace(COST = invcost, ITEMNUM = itemnum)
                                 print("New price found for {} a.k.a. {}\nFormulary price: {}\nInvoice price: {}".format(invnamedose, k, dcost, invcost))
                                 print("Formulary updated so price is now {}".format(record.PRICETABLE[k].COST))
+                                                            
+                    else: # user input on edge cases
+                        if dosepatt.search(invnamedose):
+                            print('\nFound a poor match...')
+                            print('Formulary name and dose is: '+str(dname)+' '+ str(ddose))
+                            print('Invoice name and dose is: '+str(invnamedose))
+                            
+                            user_input = input('Are these the same medication?\nPlease type \'y\' or \'n\': ')
 
-                    else: # debugging edge phrases
-                        print('matching...')
-                        print('dname is: ' + str(dname))
-                        print('ddose is: ' + str(ddose))
-                        print('invnamedose is: ' + str(invnamedose))
-     
+                            while not user_input == 'y' and not user_input == 'n':
+                                user_input = input('Please try again. Are these the same medication?\nPlease type \'y\' or \'n\': ') # error check for user input
+
+                            if user_input == 'y':
+                                match = True
+                                mcount += 1
+                                record.PRICETABLE[k] = v._replace(COST = invcost, ITEMNUM = itemnum)
+                            elif user_input == 'n':
+                                print('This medication price will not be changed.')
+    
     return mcount, pricechanges, formulary, smatchcount
 
 """

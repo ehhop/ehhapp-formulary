@@ -317,12 +317,15 @@ def formulary_update(formulary, pricetable):
     # Keeps track of the number of price changes
     pricechanges = 0
 
+    # Keeps track of formulary medications without a match in the pricetable
+    meds_without_match = []
+
     # Loop through each FormularyRecord
     for record in formulary:
         # Set the PRICETABLE attribute
         record._set_PRICETABLE()
 
-        # Keeps track of whether there a match for each formulary medication in the price table
+        # Keeps track of whether there a match for each formulary medication in the pricetable
         has_match = False
 
         # Then loop through each dose/cost pair for the given record
@@ -375,9 +378,10 @@ def formulary_update(formulary, pricetable):
                             elif user_input == 'n':
                                 print('This medication price will not be changed.')
         if has_match == False:
-            print(dname+' '+ddose+'has no matches')
+            capture = dname+' '+ddose
+            meds_without_match.append(capture)
 
-    return mcount, pricechanges, formulary, smatchcount
+    return mcount, pricechanges, formulary, smatchcount, meds_without_match
 
 """
 ### WORK-IN-PROGRESS
@@ -440,8 +444,12 @@ if __name__ == "__main__":
     formulary = store_formulary(formularyparsed)
     
     # Updating Formulary Against Invoice
-    mcount, pricechanges, updatedformulary, softmatch  = formulary_update(formulary, pricetable)
+    mcount, pricechanges, updatedformulary, softmatch, meds_without_match = formulary_update(formulary, pricetable)
     print('Number of medication matches found: {}\nNumber of price changes found: {}\nNumber of soft matches made: {}'.format(mcount, pricechanges, softmatch))
+    
+    print('\n\nMeds without match: ')
+    for med in meds_without_match:
+        print(med)
 
     for i in range(0,4):
         print('updated Formulary markdown: {}'.format(updatedformulary[i]._to_markdown()))

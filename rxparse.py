@@ -1,5 +1,7 @@
 import re
 import csv
+from statistics import mean
+from fuzzywuzzy import fuzz
 from datetime import datetime
 from collections import namedtuple
 
@@ -292,11 +294,39 @@ def match_string(string, phrase):
     '''Determines if any of the full words in 'string' match any of the full words in the phrase
     Returns True or False
     '''
+
     string_split = string.split()
     phrase_split = phrase.split()
     is_match = set(string_split) < set(phrase_split)
 
     return is_match
+
+def match_string_fuzzy(string, phrase, set_similarity_rating):
+    '''Determines if any of the full words in 'string' match any of the full words in the phrase
+    Returns True or False
+    '''
+    string_split = string.split()
+    phrase_split = phrase.split()
+    overall_match = []
+
+    for s in string_split:
+        highest_match = 0
+        # Find highest match for each single word in the formulary drug name
+        s = s.lower()
+        for p in phrase_split:
+            p = p.lower()
+            percent_match = fuzz.partial_ratio(s, p)
+            if percent_match > highest_match:
+                highest_match = percent_match
+
+        overall_match.append(highest_match)
+
+    if mean(overall_match) > set_similarity_rating:
+        is_fuzzy_match = True
+    else:
+        is_fuzzy_match = False
+
+    return is_fuzzy_match
 
 def price_disc(dcost, invcost):
     if dcost != invcost:
@@ -344,7 +374,8 @@ def formulary_update(formulary, pricetable):
                 itemnum = ir.ITEMNUM
 
                 # If the name and dose are a subset of the pricetable key then we have a match
-                if re.search(dname, invnamedose): # capture edge cases
+                if match_string_fuzzy(dname, invnamedose, set_similarity_rating=70):  # Use fuzzy matching to capture edge cases
+                
                     if match_string(dname, invnamedose):
                         softmatch = True
                         smatchcount += 1

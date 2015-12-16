@@ -322,6 +322,9 @@ def formulary_update(formulary, pricetable):
         # Set the PRICETABLE attribute
         record._set_PRICETABLE()
 
+        # Keeps track of whether there a match for each formulary medication in the price table
+        has_match = False
+
         # Then loop through each dose/cost pair for the given record
         for k, v in record.PRICETABLE.items():
             dcost = v.COST.lower()
@@ -342,10 +345,10 @@ def formulary_update(formulary, pricetable):
                     if match_string(dname, invnamedose):
                         softmatch = True
                         smatchcount += 1
+                        has_match = True
                         
                         if dosepatt.search(invnamedose):
 
-                            match = True
                             mcount += 1
                             
                             if price_disc(dcost, invcost):
@@ -366,12 +369,14 @@ def formulary_update(formulary, pricetable):
                                 user_input = input('Please try again. Are these the same medication?\nPlease type \'y\' or \'n\': ') # error check for user input
 
                             if user_input == 'y':
-                                match = True
+                                has_match = True
                                 mcount += 1
                                 record.PRICETABLE[k] = v._replace(COST = invcost, ITEMNUM = itemnum)
                             elif user_input == 'n':
                                 print('This medication price will not be changed.')
-    
+        if has_match == False:
+            print(dname+' '+ddose+'has no matches')
+
     return mcount, pricechanges, formulary, smatchcount
 
 """

@@ -455,10 +455,14 @@ Janky ass debug functions
 
 if __name__ == "__main__":
     import sys
-    
+    import os
+
+    invoice = os.getcwd() + "/data/invoice.csv"
+    formulary = os.getcwd() + "/data/rx.md"
+ 
     # Processing Invoice
     print('Processing Invoice...\n')
-    recordlist = read_csv(str(sys.argv[1]))
+    recordlist = read_csv(str(invoice))
     print('Number of Invoice Entries: {}'.format(len(recordlist)))
     print(recordlist[0])
     
@@ -467,7 +471,7 @@ if __name__ == "__main__":
 
     # Processing Formulary
     print('Processing Formulary...\n')
-    formularylist = read_md(str(sys.argv[2]))
+    formularylist = read_md(str(formulary))
     formularyparsed = parse_mddata(formularylist)
     print('Number of Formulary Records: {}'.format(len(formularyparsed)))
     print(formularyparsed[0])

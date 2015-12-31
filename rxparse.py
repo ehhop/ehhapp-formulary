@@ -14,7 +14,7 @@ def read_csv(filename):
     """
     # Open, read, and filter
     with open(filename, 'rU') as f:
-        
+ 
         # Instantiate csv.reader
         readerobj = csv.reader(f)
         csvlines = [i for i in readerobj]
@@ -24,8 +24,8 @@ def read_csv(filename):
         itemnumcolumnindex = 2
         
         invoice = [i for i in csvlines if re.fullmatch(drugitemnumpatt,\
-                i[itemnumcolumnindex])]
-        
+            i[itemnumcolumnindex])]
+
         return invoice
 
 def store_pricetable(invoice):

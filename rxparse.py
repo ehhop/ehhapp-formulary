@@ -1,5 +1,7 @@
 import re
 import csv
+from statistics import mean
+from fuzzywuzzy import fuzz
 from datetime import datetime
 from collections import namedtuple
 
@@ -292,11 +294,39 @@ def match_string(string, phrase):
     '''Determines if any of the full words in 'string' match any of the full words in the phrase
     Returns True or False
     '''
+
     string_split = string.split()
     phrase_split = phrase.split()
     is_match = set(string_split) < set(phrase_split)
 
     return is_match
+
+def match_string_fuzzy(string, phrase, set_similarity_rating):
+    '''Determines if any of the full words in 'string' match any of the full words in the phrase
+    Returns True or False
+    '''
+    string_split = string.split()
+    phrase_split = phrase.split()
+    overall_match = []
+
+    for s in string_split:
+        highest_match = 0
+        # Find highest match for each single word in the formulary drug name
+        s = s.lower()
+        for p in phrase_split:
+            p = p.lower()
+            percent_match = fuzz.partial_ratio(s, p)
+            if percent_match > highest_match:
+                highest_match = percent_match
+
+        overall_match.append(highest_match)
+
+    if mean(overall_match) > set_similarity_rating:
+        is_fuzzy_match = True
+    else:
+        is_fuzzy_match = False
+
+    return is_fuzzy_match
 
 def price_disc(dcost, invcost):
     if dcost != invcost:
@@ -317,10 +347,16 @@ def formulary_update(formulary, pricetable):
     # Keeps track of the number of price changes
     pricechanges = 0
 
+    # Keeps track of formulary medications without a match in the pricetable
+    meds_without_match = []
+
     # Loop through each FormularyRecord
     for record in formulary:
         # Set the PRICETABLE attribute
         record._set_PRICETABLE()
+
+        # Keeps track of whether there a match for each formulary medication in the pricetable
+        has_match = False
 
         # Then loop through each dose/cost pair for the given record
         for k, v in record.PRICETABLE.items():
@@ -338,14 +374,17 @@ def formulary_update(formulary, pricetable):
                 itemnum = ir.ITEMNUM
 
                 # If the name and dose are a subset of the pricetable key then we have a match
-                if re.search(dname, invnamedose): # capture edge cases
+                if match_string_fuzzy(dname, invnamedose, set_similarity_rating=70):  # Use fuzzy matching to capture edge cases
+                
+                    softmatch = True
+                    smatchcount += 1
+
                     if match_string(dname, invnamedose):
-                        softmatch = True
-                        smatchcount += 1
+                        
+                        has_match = True
                         
                         if dosepatt.search(invnamedose):
 
-                            match = True
                             mcount += 1
                             
                             if price_disc(dcost, invcost):
@@ -366,13 +405,16 @@ def formulary_update(formulary, pricetable):
                                 user_input = input('Please try again. Are these the same medication?\nPlease type \'y\' or \'n\': ') # error check for user input
 
                             if user_input == 'y':
-                                match = True
+                                has_match = True
                                 mcount += 1
                                 record.PRICETABLE[k] = v._replace(COST = invcost, ITEMNUM = itemnum)
                             elif user_input == 'n':
                                 print('This medication price will not be changed.')
-    
-    return mcount, pricechanges, formulary, smatchcount
+        if has_match == False:
+            capture = dname+' '+ddose
+            meds_without_match.append(capture)
+
+    return mcount, pricechanges, formulary, smatchcount, meds_without_match
 
 """
 ### WORK-IN-PROGRESS
@@ -435,8 +477,12 @@ if __name__ == "__main__":
     formulary = store_formulary(formularyparsed)
     
     # Updating Formulary Against Invoice
-    mcount, pricechanges, updatedformulary, softmatch  = formulary_update(formulary, pricetable)
+    mcount, pricechanges, updatedformulary, softmatch, meds_without_match = formulary_update(formulary, pricetable)
     print('Number of medication matches found: {}\nNumber of price changes found: {}\nNumber of soft matches made: {}'.format(mcount, pricechanges, softmatch))
+    
+    print('\n\nMeds without match: ')
+    for med in meds_without_match:
+        print(med)
 
     for i in range(0,4):
         print('updated Formulary markdown: {}'.format(updatedformulary[i]._to_markdown()))

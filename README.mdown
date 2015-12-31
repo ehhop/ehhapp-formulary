@@ -1,27 +1,50 @@
-# Formulary Update
+Formulary Update
+================
 
 Takes invoices, parses them, and updates drug prices along with other medication metadata and spits it out as EHHapp-compatible Markdown, and Pharmacy Team-approved data tables.
 
-To run this, you should have an `invoice.csv` and `rx.md` corresponding to latest invoice and EHHapp formulary respectively.
+Case Study
+----------
 
-## Invoice Data
+The Pharmacy Team receives invoices from the Pharmacy on occasion in the form
+of a spreadsheet. Each row in this spreadsheet corresponds to an order placed by
+a clinician containing information about the drug, dose, item number, and price.
 
+In the interest of maintaining a cost-conscious medical practice the Pharmacy
+Team wants to extract any recent changes in drug prices and to update the
+EHHapp Formulary accordingly with up-to-date information.
+
+Data of Interest
+----------------
+
+_Invoice Data_
+
+```
 Item No
 Item Description
 Commodity Name
 Requisition Date
 Price
+```
 
-## Formulary Data Structure
+_Formulary Data Structure_
 
+```
+* CATEGORY
+> ~DRUGNAME | COSTpD (DOSE) | SUBCATEGORY
+```
+
+```
 "BLACKLISTED DNAME METADATA"
 [COST (DOSE, ...), ...]
 SUBCATEGORY
 
 CATEGORY
+```
 
-## EHHOP Formulary Database
+_EHHOP Formulary Database_
 
+```
 UID
 Item No
 Item Description
@@ -31,49 +54,4 @@ Price
 Formulary Name
 Formulary Dose
 Blacklist Status
-
-## Formulary Data
-
-## Known Issues
-
-### Name Matching Problems
-
-1. Are Potassium Chloride and Potassium Chloride SR the same drug?
-
-> A soft match was found between Formulary: Potassium Chloride 20meq and Invoice: POTASSIUM CHLORIDE SR 20MEQ TAB
-
-_Plan_: Ask Jackie about KCl vs KCl SR
-
-2. We probably need to correct how we name medications in the formulary.
-
-> A soft match was found between Formulary: Vitamin D 400IU and Invoice: VITAMIN D3 400IU TAB 100S
-
-_Plan_: Change to D3
-
-3. We also probably want to keep (dose, price) information in a 1:1 relationship.
-
-> A soft match was found between Formulary: Hydrochlorothiazide 25mg, 50mg and Invoice: HYDROCHLOROTHIAZIDE 25MG TAB
-
-_Plan_: Why are both 25mg and 50mg here?
-
-> A soft match was found between Formulary: Terazosin 1mg, 2mg, 5mg and Invoice: TERAZOSIN 1MG CAP
-
-## How stuff looks
-
-EHHapp Formulary Template: This is how we display information about drugs in the EHHapp.
-
-* CATEGORY
-> ~DRUGNAME | COSTpD (DOSE) | SUBCATEGORY
-
-The relevant data fields in the EHHapp Formulary are:
-
-* CATEGORY - e.g. ANALGESICS
-* SUBCATEGORY - e.g. Topical, i.e. "Route of administration"
-* DRUGNAME
-* APPROVED - if the drug is blacklisted
-* DOSE - dose information, if any
-* COSTpD - cost per dose
-
-Invoice Template: This is how information is recorded in monthly invoices.
-
-_TODO_: Fill this in.
+```

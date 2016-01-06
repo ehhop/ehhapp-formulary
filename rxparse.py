@@ -453,8 +453,7 @@ def to_TSV(formulary):
 Janky ass debug functions
 """
 
-if __name__ == "__main__":
-    import sys
+if __name__ == "__main__": 
     import os
 
     invoice = os.getcwd() + "/data/invoice.csv"

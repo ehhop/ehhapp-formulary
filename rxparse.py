@@ -287,6 +287,17 @@ def store_formulary(parsedformulary):
 
     return formulary
 
+
+# Crosscheck the formulary against the invoice and update prices
+
+mcount = 0
+pricechanges = 0
+
+def update_formulary(formulary):
+    """Update the formulary by running matching functions.
+    """
+    updatedformulary = []
+    return updatedformulary
 """
 All of these functions should keep track of differences between new and old data
 """
@@ -459,16 +470,22 @@ if __name__ == "__main__":
     invoice = os.getcwd() + "/data/invoice.csv"
     formulary = os.getcwd() + "/data/rx.md"
  
-    # Processing Invoice
-    print('Processing Invoice...\n')
-    recordlist = read_csv(str(invoice))
-    print('Number of Invoice Entries: {}'.format(len(recordlist)))
-    print(recordlist[0])
-    
-    pricetable = store_pricetable(recordlist)
-    print('Number of Price Table Entries: {}\nEach Entry is a: {}'.format(len(pricetable), type(next(iter(pricetable.values())))))
+    # It reads and filters invoice.csv for drug entries
 
-    # Processing Formulary
+    print('Processing Invoice...\n')
+    drugentries = read_csv(str(invoice))
+    print('Number of Invoice Entries: {}\n'.format(len(drugentries)))
+    print(drugentries[0])
+    
+
+    # It stores individual drug-dose-prices with metadata as InvRec instances
+
+    pricetable = store_pricetable(drugentries)
+    print('Number of Price Table Entries: {} Each Entry is a: {}\n'.format(len(pricetable), type(next(iter(pricetable.values())))))
+
+
+    # It reads and filters rx.md for drug entries
+    
     print('Processing Formulary...\n')
     formularylist = read_md(str(formulary))
     formularyparsed = parse_mddata(formularylist)
@@ -477,22 +494,24 @@ if __name__ == "__main__":
     for i in range(0,4):
         print('from Formulary: NAME:{} DOSECOST:{}'.format(FormularyRecord(formularyparsed[i]).NAME, FormularyRecord(formularyparsed[i]).DOSECOST))
 
+
+    # It stores individual drugs as FormularyRecord instances
+
     formulary = store_formulary(formularyparsed)
-    
-    # Updating Formulary Against Invoice
-    mcount, pricechanges, updatedformulary, softmatch, meds_without_match = formulary_update(formulary, pricetable)
-    print('Number of medication matches found: {}\nNumber of price changes found: {}\nNumber of soft matches made: {}'.format(mcount, pricechanges, softmatch))
-    
-    print('\n\nMeds without match: ')
-    for med in meds_without_match:
-        print(med)
+    print('Number of Formulary Entries: {}\nEach Entry is a: {}'.format(len(formulary), type(next(iter(formulary)))))
 
-    for i in range(0,4):
-        print('updated Formulary markdown: {}'.format(updatedformulary[i]._to_markdown()))
+    # It updates Formulary based on Invoice
+    
+    updatedformulary = update_formulary(formulary)
+    
+    # It should tell the user the number of medication matches discovered,
+    #  and prices changes found.
+    
+    print('Number of medication matches found: {}\nNumber of price changes found: {}'.format(mcount, pricechanges))
 
-    to_Markdown(updatedformulary)
-    to_TSV(updatedformulary)
-    write_pricetable(pricetable)
+    # to_Markdown(updatedformulary)
+    # to_TSV(updatedformulary)
+    # write_pricetable(pricetable)
 
     # Test BLACKLISTED attribute
 

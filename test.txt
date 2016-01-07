@@ -1,0 +1,15 @@
+This document contains tests that look like interactive Python sessions.
+
+These tests can be run from the command line as follows:
+
+`python -m doctest -v test.txt`
+
+Tests are formatted to resemble interactive Python commands
+followed by expected return values.
+
+	>>> 1 + 1
+	2
+
+Any expected output must immediately follow the final '>>> ' or '... ' line
+containing the code, and the expected output extends to the next '>>> ' or
+all-whitespace line.

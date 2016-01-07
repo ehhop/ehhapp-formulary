@@ -1,2 +1,0 @@
-# TODO
-Finish populatedb script and figure out to get data from Excel into Mongo

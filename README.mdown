@@ -1,57 +1,119 @@
-Formulary Update
-================
+# Formulary Update
 
 Takes invoices, parses them, and updates drug prices along with other medication metadata and spits it out as EHHapp-compatible Markdown, and Pharmacy Team-approved data tables.
 
-Case Study
-----------
+## Case Study
 
-The Pharmacy Team receives invoices from the Pharmacy on occasion in the form
-of a spreadsheet. Each row in this spreadsheet corresponds to an order placed by
-a clinician containing information about the drug, dose, item number, and price.
+The Pharmacy Team receives invoices from the Pharmacy on occasion in the 
+form of a spreadsheet. Each row in this spreadsheet corresponds to an order
+ placed by a clinician containing information about the drug, dose, item
+ number, and price.
 
-In the interest of maintaining a cost-conscious medical practice the Pharmacy
-Team wants to extract any recent changes in drug prices and to update the
-EHHapp Formulary accordingly with up-to-date information.
+In the interest of maintaining a cost-conscious medical practice the
+ Pharmacy Team wants to extract any recent changes in drug prices and 
+to update the EHHapp Formulary accordingly with up-to-date information.
 
-Data of Interest
-----------------
+## Data of Interest
 
 _Invoice Data_
 
-```
-Item No
-Item Description
-Commodity Name
-Requisition Date
-Price
-```
-
-_Formulary Data Structure_
+The invoice data is tabular and each row has the following columns of
+interest.
 
 ```
-* CATEGORY
-> ~DRUGNAME | COSTpD (DOSE) | SUBCATEGORY
+"Item Number"
+"Item Description"
+"Commodity Name"
+"Requisition Date"
+"Price"
 ```
 
-```
-"BLACKLISTED DNAME METADATA"
-[COST (DOSE, ...), ...]
-SUBCATEGORY
+An `Item Number` serves as a unique identifier for a particular medication 
+at a particular dose and price. The name and dose of a medication are 
+encoded in the `Item Description`. The type of medication is found in 
+`Commodity Name`. The `Requisition Date` and `Price` correspond to when 
+the medication was ordered and the its cost at the time respectively.
 
-CATEGORY
+Since we want to update the formulary with up-to-date information, for each
+each unique `Item Number` we want to retain only the invoice row with the 
+most recent `Requisition Date`.
+
+Once a collection of all unique most-recent invoice rows is obtained, we 
+then invoke the matching algorithm to suggest possible price changes to be
+made. Any unmatched invoice rows are presented to the user for manual
+ checking.
+
+_Formulary Data_
+
+The formulary data is written using Markdown symbols.
+
 ```
+"* CATEGORY"
+"> ~DRUG1 | COSTpD (DOSE1) | SUBCATEGORY1, SUBCATEGORY2"
+"> DRUG2 | COSTpD (DOSE1, DOSE2, ...) | SUBCATEGORY"
+```
+
+There are two row types, `CATEGORY` (starting with an asterisk \*) and
+ `MEDICATION` rows (starting with a greater than symbol). `CATEGORY`
+rows indicate the type of medication. The formulary is laid out such 
+that all `MEDICATION` rows following a `CATEGORY` row are of the same type.
+
+Formulary `MEDICATION` rows lack a consistent format, making it difficult 
+to consistently and confidently match certain invoice rows with medications, doses, and prices contained in the formulary. Each `MEDICATION` formulary
+ row is '|' delimited into the following fields:
+
+```
+"blacklistedstatusNAMEotherinfo"
+"COST1 (DOSE1, ...), ... COSTn (... DOSEm)"
+"SUBCATEGORY1, ... SUBCATEGORYk"
+```
+
+where `n` is the number of price points associated with a certain medication
+ called `NAME`. Each cost/price may have any number of doses available at
+ that price point. Finally, a medication may belong to `k` subcategories.
+
+A single formulary `MEDICATION` row has up to `m` number of `DOSE`/`NAME`/
+`COST` objects which may be subject to a price change.
+
+_Detecting a Price Change_
+
+The script should make a reasonable price change when the `COST` found
+in a `DOSE`/`NAME`/`COST` object derived from the formulary is different
+from the `Price` found in a matching up-to-date invoice row.
+
+_Match Suggestion_
+
+A match should be suggested by comparing medication dosage and name
+ information found within the `Item Description` of an invoice row with
+dosage and name information found in a `DOSE`/`NAME`/`COST` object derived
+ from formulary `MEDICATION` rows.
+
+Some match suggestions should be automatically accepted as a true match 
+without human confirmation based on the following strict rules:
+
+Others, dubbed "fuzzy" matches require human confirmation.
+
+If neither "fuzzy" nor rule-based matches are found for a given invoice row
+ manual match-making by human inspection and should be supported.
+
+Finally, if no match confirmation is possible, match-not-found status 
+should be assigned, and should trigger escalation of the issue to leaders
+ responsible for auditing prescribing practices.
 
 _EHHOP Formulary Database_
 
+To fully automate future price updates, any confirmed matches between
+ invoice rows and formulary row-derived `DOSE`/`NAME`/`COST` objects should
+ be persisted in a flat file database with the following parameters.
+
 ```
-UID
-Item No
-Item Description
-Commodity Name
-Requisition Date - Most Recent
-Price
-Formulary Name
-Formulary Dose
-Blacklist Status
+"UID"
+"Item No"
+"Item Description"
+"Commodity Name"
+"Requisition Date - Most Recent"
+"Price"
+"Formulary Name"
+"Formulary Dose"
+"Blacklist Status"
 ```

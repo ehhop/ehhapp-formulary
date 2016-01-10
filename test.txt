@@ -1,15 +1,15 @@
-This document contains tests that look like interactive Python sessions.
+Test 1
 
-These tests can be run from the command line as follows:
+>>> 2 + 2
+4
 
-`python -m doctest -v test.txt`
+Test 2
 
-Tests are formatted to resemble interactive Python commands
-followed by expected return values.
+>>> formulary = []
 
-	>>> 1 + 1
-	2
+Test 3
+>>> formulary
+[]
 
-Any expected output must immediately follow the final '>>> ' or '... ' line
-containing the code, and the expected output extends to the next '>>> ' or
-all-whitespace line.
+Test 4
+>>> import rxparse

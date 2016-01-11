@@ -2,13 +2,13 @@
 Formulary_updated.*
 pricetable.tsv
 
-# Input files
-invoice.csv
-rx.md
+# Miscellaneous Data
+misc/
 
 # Mac OS X System
 .DS_STORE
 
+# Standard Python .gitignore
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

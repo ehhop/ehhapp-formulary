@@ -1,9 +1,11 @@
 # Output files
-Formulary_updated.*
-pricetable.tsv
+rx_new
+formulary
 
 # Miscellaneous Data
-miscd/
+# This directory may have useful info.
+# You can get it by asking the Tech Chair at EHHOP
+_miscd/
 
 # Mac OS X System
 .DS_STORE

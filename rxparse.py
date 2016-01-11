@@ -137,11 +137,11 @@ class FormularyRecord:
         elif m:
             self.BLACKLISTED = False
             name = m.group(1)
-            print('{} came from {}'.format(name, namestring))
+            # print('{} came from {}'.format(name, namestring))
 
             if bool(name) == False:
                 name = m.group(3)
-                print('What was once None is now {}'.format(name))
+                # print('What was once None is now {}'.format(name))
 
         else:
             self.BLACKLISTED = False
@@ -471,53 +471,36 @@ if __name__ == "__main__":
     # Run doctests
     doctest.testfile("test.txt", verbose=True)
 
+    # Declare input files
     invoice = os.getcwd() + "/input/invoice.csv"
     formulary = os.getcwd() + "/input/rx.md"
  
     # It reads and filters invoice.csv for drug entries
-
     print('Processing Invoice...\n')
     drugentries = read_csv(str(invoice))
     print('Number of Invoice Entries: {}\n'.format(len(drugentries)))
-    print(drugentries[0])
-    
 
     # It stores individual drug-dose-prices with metadata as InvRec instances
-
     pricetable = store_pricetable(drugentries)
     print('Number of Price Table Entries: {} Each Entry is a: {}\n'.format(len(pricetable), type(next(iter(pricetable.values())))))
 
 
-    # It reads and filters rx.md for drug entries
-    
+    # It reads and filters rx.md for drug entries    
     print('Processing Formulary...\n')
     formularylist = read_md(str(formulary))
     formularyparsed = parse_mddata(formularylist)
     print('Number of Formulary Records: {}'.format(len(formularyparsed)))
-    print(formularyparsed[0])
-    for i in range(0,4):
-        print('from Formulary: NAME:{} DOSECOST:{}'.format(FormularyRecord(formularyparsed[i]).NAME, FormularyRecord(formularyparsed[i]).DOSECOST))
-
+    
+    # for i in range(0,4):
+    #     print('from Formulary: NAME:{} DOSECOST:{}'.format(FormularyRecord(formularyparsed[i]).NAME, FormularyRecord(formularyparsed[i]).DOSECOST))
 
     # It stores individual drugs as FormularyRecord instances
-
     formulary = store_formulary(formularyparsed)
     print('Number of Formulary Entries: {}\nEach Entry is a: {}'.format(len(formulary), type(next(iter(formulary)))))
 
-    # It updates Formulary based on Invoice
-    
+    # It updates Formulary based on Invoice 
     updatedformulary = update_formulary(formulary)
     
-    # It should tell the user the number of medication matches discovered,
-    #  and prices changes found.
-    
-    print('Number of medication matches found: {}\nNumber of price changes found: {}'.format(mcount, pricechanges))
-
     # to_Markdown(updatedformulary)
     # to_TSV(updatedformulary)
-    # write_pricetable(pricetable)
-
-    # Test BLACKLISTED attribute
-
-    blacklisted = [d for d in updatedformulary if d.BLACKLISTED]
-    print('The number of drugs are blacklisted: {}'.format(len(blacklisted)))
+    # write_pricetable(pricetable) 

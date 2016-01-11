@@ -1,15 +1,2 @@
-Test 1
-
->>> 2 + 2
-4
-
-Test 2
-
->>> formulary = []
-
-Test 3
->>> formulary
-[]
-
-Test 4
+To use, import the module.
 >>> import rxparse

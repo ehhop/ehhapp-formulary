@@ -9,7 +9,7 @@ form of a spreadsheet. Each row in this spreadsheet corresponds to an order
  placed by a clinician containing information about the drug, dose, item
  number, and price.
 
-In the interest of maintaining a cost-conscious medical practice the
+In the interest of maintaining a cost-conscious medical practice, the
  Pharmacy Team wants to extract any recent changes in drug prices and 
 to update the EHHapp Formulary accordingly with up-to-date information.
 
@@ -29,19 +29,19 @@ interest.
 ```
 
 An `Item Number` serves as a unique identifier for a particular medication 
-at a particular dose and price. The name and dose of a medication are 
+at a particular dose and cost. The name and dose of a medication are 
 encoded in the `Item Description`. The type of medication is found in 
 `Commodity Name`. The `Requisition Date` and `Price` correspond to when 
 the medication was ordered and the its cost at the time respectively.
 
-Since we want to update the formulary with up-to-date information, for each
-each unique `Item Number` we want to retain only the invoice row with the 
-most recent `Requisition Date`.
+Since we want to update the formulary with up-to-date information, we
+ retain only invoice rows with the most recent `Requisition Date` for
+ each unique `Item Number`.
 
 Once a collection of all unique most-recent invoice rows is obtained, we 
-then invoke the matching algorithm to suggest possible price changes to be
-made. Any unmatched invoice rows are presented to the user for manual
- checking.
+then invoke the matching algorithm to suggest possible price changes.
+The matching algorithm uses matching rules, as well as fuzzy matches -
+ some of which require human confirmation. More on this later.
 
 _Formulary Data_
 
@@ -69,7 +69,7 @@ to consistently and confidently match certain invoice rows with medications, dos
 ```
 
 where `n` is the number of price points associated with a certain medication
- called `NAME`. Each cost/price may have any number of doses available at
+ called `NAME`. Each price may have any number of doses available at
  that price point. Finally, a medication may belong to `k` subcategories.
 
 A single formulary `MEDICATION` row has up to `m` number of `DOSE`/`NAME`/
@@ -91,6 +91,8 @@ dosage and name information found in a `DOSE`/`NAME`/`COST` object derived
 Some match suggestions should be automatically accepted as a true match 
 without human confirmation based on the following strict rules:
 
+_RULES HERE_
+
 Others, dubbed "fuzzy" matches require human confirmation.
 
 If neither "fuzzy" nor rule-based matches are found for a given invoice row
@@ -107,8 +109,7 @@ To fully automate future price updates, any confirmed matches between
  be persisted in a flat file database with the following parameters.
 
 ```
-"UID"
-"Item No"
+"Item Number"
 "Item Description"
 "Commodity Name"
 "Requisition Date - Most Recent"

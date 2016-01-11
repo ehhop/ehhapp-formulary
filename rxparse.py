@@ -466,9 +466,13 @@ Janky ass debug functions
 
 if __name__ == "__main__": 
     import os
+    import doctest
 
-    invoice = os.getcwd() + "/data/invoice.csv"
-    formulary = os.getcwd() + "/data/rx.md"
+    # Run doctests
+    doctest.testfile("test.txt", verbose=True)
+
+    invoice = os.getcwd() + "/input/invoice.csv"
+    formulary = os.getcwd() + "/input/rx.md"
  
     # It reads and filters invoice.csv for drug entries
 

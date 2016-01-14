@@ -1,2 +1,7 @@
 To use, import the module.
 >>> import rxparse
+
+Check that input files are properly located and named.
+>>> import os
+>>> os.listdir('./input')
+['invoice.csv', 'rx.md']

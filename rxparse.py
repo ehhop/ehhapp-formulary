@@ -69,11 +69,11 @@ def store_pricetable(invoice):
     
     return pricetable
 
-def write_pricetable(pricetable):
+def write_pricetable(pricetable, pricetable_filename):
     """ Write as pricetable based on Invoice Records in CSV format.
     """
 
-    with open("pricetable.tsv", "w") as f:
+    with open(pricetable_filename, "w") as f:
         header_str = "\t".join(list(InvRec._fields))
         writeList = [header_str]
 
@@ -374,7 +374,7 @@ def formulary_update(formulary, pricetable):
                 itemnum = ir.ITEMNUM
 
                 # If the name and dose are a subset of the pricetable key then we have a match
-                if match_string_fuzzy(dname, invnamedose, set_similarity_rating=70):  # Use fuzzy matching to capture edge cases
+                if match_string_fuzzy(dname, invnamedose, set_similarity_rating=90):  # Use fuzzy matching to capture edge cases
                 
                     softmatch = True
                     smatchcount += 1
@@ -420,7 +420,7 @@ def formulary_update(formulary, pricetable):
 ### WORK-IN-PROGRESS
 These functions control output to Markdown
 """
-def to_Markdown(formulary):
+def to_Markdown(formulary, updated_markdown_filename):
     '''Outputs updated Formulary database to Markdown.
     '''
     output = []
@@ -435,10 +435,10 @@ def to_Markdown(formulary):
 
         output.append(record._to_markdown())
 
-    with open("Formulary_updated.markdown", "w") as f:
+    with open(updated_markdown_filename, "w") as f:
         f.write('\n'.join(output))
 
-def to_TSV(formulary):
+def to_TSV(formulary, updated_pricetable_filename):
     '''Outputs updated Formulary database to CSV
     '''
     output = []
@@ -446,7 +446,7 @@ def to_TSV(formulary):
     for record in formulary:
         output.append(record._to_csv())
 
-    with open("Formulary_updated.tsv", "w") as f:
+    with open(updated_pricetable_filename, "w") as f:
         f.write('\n'.join(output))
 
 """
@@ -491,9 +491,9 @@ if __name__ == "__main__":
     for i in range(0,4):
         print('updated Formulary markdown: {}'.format(updatedformulary[i]._to_markdown()))
 
-    to_Markdown(updatedformulary)
-    to_TSV(updatedformulary)
-    write_pricetable(pricetable)
+    to_Markdown(updatedformulary, "Formulary_updated.markdown")
+    to_TSV(updatedformulary, "Formulary_updated.tsv")
+    write_pricetable(pricetable, "pricetable.tsv")
 
     # Test BLACKLISTED attribute
 

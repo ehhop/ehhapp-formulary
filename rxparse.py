@@ -51,8 +51,8 @@ def store_pricetable(invoice):
                 NAME = "NaN", \
                 DOSE = "NaN", \
                 COST = item[15], \
-                CATEGORY = item[8], \
                 ITEMNUM = item[2], \
+                CATEGORY = item[8], \
                 REQDATE = converteddatetime)
         
         # Use NAMEDOSE field as the key 'k' for our dictionary of InvRec objects
@@ -74,11 +74,11 @@ def write_pricetable(pricetable, pricetable_filename):
     """
 
     with open(pricetable_filename, "w") as f:
-        header_str = "\t".join(list(InvRec._fields))
+        header_str = "\t".join(['NAME DOSE', 'COST', 'ITEUM NUM', 'CATEGORY', 'REQDATE'])
         writeList = [header_str]
 
-        for k, v in pricetable.items():
-            row = "{}\t{}\t{}\t{}\t{}".format(v.ITEMNUM, v.CATEGORY, k, v.COST, v.REQDATE)
+        for k, v in pricetable.items(): 
+            row = "{}\t{}\t{}\t{}\t{}".format(v.NAMEDOSE, v.COST, v.ITEMNUM, v.CATEGORY, v.REQDATE)
             writeList.append(row)
 
         writeString = "\n".join(writeList)
@@ -181,7 +181,8 @@ class FormularyRecord:
             cost = dosecost[0]
             namedose = '{} {}'.format(self.NAME, dose)
             # self.PRICETABLE[namedose] = [cost, self.NAME, dose, str(self.BLACKLISTED), self.CATEGORY, self.SUBCATEGORY]
-            self.PRICETABLE[namedose] = InvRec(NAMEDOSE = namedose,\
+            self.PRICETABLE[namedose] = InvRec(
+                    NAMEDOSE = namedose,\
                     NAME = self.NAME,\
                     DOSE = dose,\
                     COST = cost,\
@@ -335,7 +336,7 @@ def price_disc(dcost, invcost):
         new_price = False
     return new_price
         
-def formulary_update(formulary, pricetable):
+def formulary_update(formulary, pricetable, set_similarity_rating=99):
     """Update drugs in formulary with prices from invoice.
     """
     # Keeps track of soft matches
@@ -374,7 +375,7 @@ def formulary_update(formulary, pricetable):
                 itemnum = ir.ITEMNUM
 
                 # If the name and dose are a subset of the pricetable key then we have a match
-                if match_string_fuzzy(dname, invnamedose, set_similarity_rating=90):  # Use fuzzy matching to capture edge cases
+                if match_string_fuzzy(dname, invnamedose, set_similarity_rating):  # Use fuzzy matching to capture edge cases
                 
                     softmatch = True
                     smatchcount += 1
@@ -493,7 +494,7 @@ if __name__ == "__main__":
 
     to_Markdown(updatedformulary, "Formulary_updated.markdown")
     to_TSV(updatedformulary, "Formulary_updated.tsv")
-    write_pricetable(pricetable, "pricetable.tsv")
+    write_pricetable(pricetable, "persistant-pricetable.tsv")
 
     # Test BLACKLISTED attribute
 

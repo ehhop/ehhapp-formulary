@@ -501,6 +501,9 @@ if __name__ == "__main__":
 
     invoice = os.getcwd() + "/data/invoice.csv"
     formulary = os.getcwd() + "/data/rx.md"
+    pricetable_filename = os.getcwd() + "/data/persistent-pricetable.tsv"
+    markdown_updated_filename = os.getcwd() + "/output/Formulary_updated.markdown"
+    formulary_updated_filename = os.getcwd() + "/output/Formulary_updated.tsv"
  
     # Processing Invoice
     print('Processing Invoice...\n')
@@ -509,7 +512,7 @@ if __name__ == "__main__":
     print('Number of Invoice Entries: {}'.format(len(recordlist)))
     print(recordlist[0])
 
-    pricetable = read_pricetable("persistant-pricetable.tsv")
+    pricetable = read_pricetable(pricetable_filename)
     pricetable = update_pricetable(pricetable, recordlist)
 
     print('Number of Price Table Entries: {}\nEach Entry is a: {}'.format(len(pricetable), type(next(iter(pricetable.values())))))
@@ -535,11 +538,11 @@ if __name__ == "__main__":
 
     for i in range(0,4):
         print('updated Formulary markdown: {}'.format(updatedformulary[i]._to_markdown()))
-
-    to_Markdown(updatedformulary, "Formulary_updated.markdown")
-    to_TSV(updatedformulary, "Formulary_updated.tsv")
-    write_pricetable(pricetable, "persistant-pricetable.tsv")
-
+    
+    to_Markdown(updatedformulary, markdown_updated_filename)
+    to_TSV(updatedformulary, formulary_updated_filename)
+    write_pricetable(pricetable, pricetable_filename)
+    
     # Test BLACKLISTED attribute
 
     blacklisted = [d for d in updatedformulary if d.BLACKLISTED]

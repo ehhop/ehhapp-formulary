@@ -1,6 +1,6 @@
 # Output files
 Formulary_updated.*
-pricetable.tsv
+persistent-pricetable.tsv
 
 # Input files
 invoice.csv

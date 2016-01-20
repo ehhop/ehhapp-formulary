@@ -28,16 +28,58 @@ def read_csv(filename):
         
         return invoice
 
-def store_pricetable(invoice):
-    """Store only unique and most recent drug and price records.
+def read_pricetable(pricetable_filename):
+    """Import persistent pricetable and store the most recent unique drug and price records.
+
+    Load drug and price records from a persistent pricetable as InvRec(Collections.namedtuple) instances.
+    Store uniquely in a dictionary by using the NAMEDOSE field as a key and the InvRec 
+    instance as the value. If an entry with a more recent price is encountered, update the dictionary entry. 
+    """
+
+    # Open, read, and filter
+    with open(pricetable_filename, 'rU') as f:
+        
+        # Instantiate csv.reader
+        readerobj = csv.reader(f, delimiter='\t')
+        next(readerobj) # Skip line with column headings
+        csvlines = [i for i in readerobj]
+
+        # Iterate over and parse each drug and price record
+        pricetable = {}
+        for item in csvlines:
+
+            # Convert date string to datetime object
+            dtformat = '%Y-%m-%d %H:%M:%S'
+            datestr = item[4]
+            converteddatetime = datetime.strptime(datestr, dtformat)
+
+            # Instantiate namedtuple from using values returned by list indices
+            entry = InvRec(
+                    NAMEDOSE = item[0], \
+                    NAME = "NaN", \
+                    DOSE = "NaN", \
+                    COST = item[1], \
+                    ITEMNUM = item[2], \
+                    CATEGORY = item[3], \
+                    REQDATE = converteddatetime)
+
+            # Use NAMEDOSE field as the key 'k' for our dictionary of InvRec objects
+            k = entry.NAMEDOSE
+
+            # All keys will be stored immediately with their corresponding values.
+            pricetable[k] = entry
+        
+        return pricetable
+
+def update_pricetable(pricetable, invoice):
+    """Update pricetable using only unique and most recent drug and price records.
  
     Parse drug and price records and load them as InvRec(Collections.namedtuple) instances.
-    Store uniquely in a dictionary by using the ITEMNUM field as a key and the InvRec 
+    Store uniquely in a dictionary by using the NAMEDOSE field as a key and the InvRec 
     instance as the value. If an entry with a more recent price is encountered, update the dictionary entry. 
     """
 
     # Iterate over and parse each drug and price record
-    pricetable = {}
     for item in invoice:
 
         # Convert date string to datetime object
@@ -45,14 +87,13 @@ def store_pricetable(invoice):
         datestr = item[12]
         converteddatetime = datetime.strptime(datestr, dtformat)
 
-
         # Instantiate namedtuple from using values returned by list indices
         entry = InvRec(NAMEDOSE = item[3], \
                 NAME = "NaN", \
                 DOSE = "NaN", \
                 COST = item[15], \
-                CATEGORY = item[8], \
                 ITEMNUM = item[2], \
+                CATEGORY = item[8], \
                 REQDATE = converteddatetime)
         
         # Use NAMEDOSE field as the key 'k' for our dictionary of InvRec objects
@@ -69,16 +110,16 @@ def store_pricetable(invoice):
     
     return pricetable
 
-def write_pricetable(pricetable):
+def write_pricetable(pricetable, pricetable_filename):
     """ Write as pricetable based on Invoice Records in CSV format.
     """
 
-    with open("pricetable.tsv", "w") as f:
-        header_str = "\t".join(list(InvRec._fields))
+    with open(pricetable_filename, "w") as f:
+        header_str = "\t".join(['NAME DOSE', 'COST', 'ITEM NUM', 'CATEGORY', 'REQDATE'])
         writeList = [header_str]
 
-        for k, v in pricetable.items():
-            row = "{}\t{}\t{}\t{}\t{}".format(v.ITEMNUM, v.CATEGORY, k, v.COST, v.REQDATE)
+        for k, v in pricetable.items(): 
+            row = "{}\t{}\t{}\t{}\t{}".format(v.NAMEDOSE, v.COST, v.ITEMNUM, v.CATEGORY, v.REQDATE)
             writeList.append(row)
 
         writeString = "\n".join(writeList)
@@ -181,7 +222,8 @@ class FormularyRecord:
             cost = dosecost[0]
             namedose = '{} {}'.format(self.NAME, dose)
             # self.PRICETABLE[namedose] = [cost, self.NAME, dose, str(self.BLACKLISTED), self.CATEGORY, self.SUBCATEGORY]
-            self.PRICETABLE[namedose] = InvRec(NAMEDOSE = namedose,\
+            self.PRICETABLE[namedose] = InvRec(
+                    NAMEDOSE = namedose,\
                     NAME = self.NAME,\
                     DOSE = dose,\
                     COST = cost,\
@@ -335,7 +377,7 @@ def price_disc(dcost, invcost):
         new_price = False
     return new_price
         
-def formulary_update(formulary, pricetable):
+def formulary_update(formulary, pricetable, set_similarity_rating=99):
     """Update drugs in formulary with prices from invoice.
     """
     # Keeps track of soft matches
@@ -374,7 +416,7 @@ def formulary_update(formulary, pricetable):
                 itemnum = ir.ITEMNUM
 
                 # If the name and dose are a subset of the pricetable key then we have a match
-                if match_string_fuzzy(dname, invnamedose, set_similarity_rating=70):  # Use fuzzy matching to capture edge cases
+                if match_string_fuzzy(dname, invnamedose, set_similarity_rating):  # Use fuzzy matching to capture edge cases
                 
                     softmatch = True
                     smatchcount += 1
@@ -420,7 +462,7 @@ def formulary_update(formulary, pricetable):
 ### WORK-IN-PROGRESS
 These functions control output to Markdown
 """
-def to_Markdown(formulary):
+def to_Markdown(formulary, updated_markdown_filename):
     '''Outputs updated Formulary database to Markdown.
     '''
     output = []
@@ -435,10 +477,10 @@ def to_Markdown(formulary):
 
         output.append(record._to_markdown())
 
-    with open("Formulary_updated.markdown", "w") as f:
+    with open(updated_markdown_filename, "w") as f:
         f.write('\n'.join(output))
 
-def to_TSV(formulary):
+def to_TSV(formulary, updated_pricetable_filename):
     '''Outputs updated Formulary database to CSV
     '''
     output = []
@@ -446,7 +488,7 @@ def to_TSV(formulary):
     for record in formulary:
         output.append(record._to_csv())
 
-    with open("Formulary_updated.tsv", "w") as f:
+    with open(updated_pricetable_filename, "w") as f:
         f.write('\n'.join(output))
 
 """
@@ -459,14 +501,20 @@ if __name__ == "__main__":
 
     invoice = os.getcwd() + "/data/invoice.csv"
     formulary = os.getcwd() + "/data/rx.md"
+    pricetable_filename = os.getcwd() + "/data/persistent-pricetable.tsv"
+    markdown_updated_filename = os.getcwd() + "/output/Formulary_updated.markdown"
+    formulary_updated_filename = os.getcwd() + "/output/Formulary_updated.tsv"
  
     # Processing Invoice
     print('Processing Invoice...\n')
+
     recordlist = read_csv(str(invoice))
     print('Number of Invoice Entries: {}'.format(len(recordlist)))
     print(recordlist[0])
-    
-    pricetable = store_pricetable(recordlist)
+
+    pricetable = read_pricetable(pricetable_filename)
+    pricetable = update_pricetable(pricetable, recordlist)
+
     print('Number of Price Table Entries: {}\nEach Entry is a: {}'.format(len(pricetable), type(next(iter(pricetable.values())))))
 
     # Processing Formulary
@@ -490,11 +538,11 @@ if __name__ == "__main__":
 
     for i in range(0,4):
         print('updated Formulary markdown: {}'.format(updatedformulary[i]._to_markdown()))
-
-    to_Markdown(updatedformulary)
-    to_TSV(updatedformulary)
-    write_pricetable(pricetable)
-
+    
+    to_Markdown(updatedformulary, markdown_updated_filename)
+    to_TSV(updatedformulary, formulary_updated_filename)
+    write_pricetable(pricetable, pricetable_filename)
+    
     # Test BLACKLISTED attribute
 
     blacklisted = [d for d in updatedformulary if d.BLACKLISTED]

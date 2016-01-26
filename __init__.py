@@ -13,6 +13,16 @@ app.config['MAX_CONTENT_LENGTH'] = 100*1024*1024 #set max upload file size to 10
 def allowed_file(filename):
 	return '.' in filename and \
 		filename.rsplit('.',1)[1] in ALLOWED_EXTENSIONS
+def upload_file():
+	if request.files['file'].filename == '':
+		error_prompt = 'Please check that all files have been selected for upload'
+		return render_template('index.html', error_prompt=error_prompt)
+	uploaded_files = request.files.getlist("file")
+	file = request.files['file']
+	if file and allowed_file(file.filename):
+		filename = secure_filename(file.filename)
+		file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+		return render_template('upload.html', filename=filename)
 
 @app.route('/')
 def index():
@@ -20,15 +30,17 @@ def index():
 	return render_template('index.html', error_prompt=error_prompt)
 
 @app.route('/upload', methods=['POST'])
-def upload_file():
-	if request.files['file'].filename == '':
-		error_prompt = 'Please check that all files have been selected for upload'
-		return render_template('index.html', error_prompt=error_prompt)
-	file = request.files['file']
-	if file and allowed_file(file.filename):
-		filename = secure_filename(file.filename)
-		file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-		return render_template('upload.html', filename=filename)
+def process_file():
+	uploaded_files = request.files.getlist("file")
+	for file in uploaded_files:
+		if file.filename == '':
+			error_prompt = 'Please check that all files have been selected for upload'
+			return render_template('index.html', error_prompt=error_prompt)
+	for file in uploaded_files:
+		if file and allowed_file(file.filename):
+			filename = secure_filename(file.filename)
+			file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+			return render_template('upload.html', filename=filename)
 
 @app.route('/uploads/<filename>')
 def uploaded_file(filename):

@@ -8,6 +8,7 @@ ALLOWED_EXTENSIONS = set(['txt','xls','xlsx','csv','tsv','md'])
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['MAX_CONTENT_LENGTH'] = 100*1024*1024 #set max upload file size to 100mb
 
 def allowed_file(filename):
 	return '.' in filename and \

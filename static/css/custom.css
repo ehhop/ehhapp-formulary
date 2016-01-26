@@ -1,0 +1,68 @@
+@media (min-width: 600px) {
+	.container {
+		max-width: 600px;
+	}
+	.col-height {
+	height: 50px;
+	}
+}
+
+.prompt-container {
+  height: 50px;
+  height: 100%;
+}
+.prompt-text {
+	word-wrap: normal;
+  height: 100%;
+  display: -webkit-box;
+  display: -moz-box;
+  display: -ms-flexbox;
+  display: -webkit-flex;
+  display: flex;
+  -webkit-box-pack: center;
+  -moz-box-pack: center;
+  -ms-flex-pack: center;
+  -webkit-justify-content: left;
+  justify-content: left;
+  -webkit-box-align: center;
+  -moz-box-align: center;
+  -ms-flex-align: center;
+  -webkit-align-items: center;
+  align-items: center;
+}
+.col-height {
+	height: 50px;
+}
+body {
+	background: #f4f4f4;
+}
+.layout {
+	padding: 50px;
+	font-family: Georgia, serif; }
+.navbar-text {
+	font-size: 18px;
+	text-align: center;
+}
+.navbar {
+	margin-bottom: 0px;
+}
+
+.btn-toolbar.spaced-bar {
+	height: 60px;
+}
+.slider {
+	vertical-align: middle;
+	width: 100%;
+}
+.bottom-page-description {
+	text-align: center;
+}
+.vertical-center {
+	position: relative;
+  	top: 50%;
+  	transform: translateY(-50%);
+}
+.dropdown-menu {
+	margin-right: 15px;
+	margin-top: -6px
+}

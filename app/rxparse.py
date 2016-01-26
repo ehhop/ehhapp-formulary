@@ -495,23 +495,25 @@ def to_TSV(formulary, updated_pricetable_path):
 """
 Janky ass debug functions
 """
-def rxparse(formulary_md_filename, invoice_filename, pricetable_filename):
+def update_rx(formulary_md_filename, invoice_filename, pricetable_filename, verbose_debug=False):
     formulary_md_path = os.getcwd() + '/input/' + formulary_md_filename
     invoice_path = os.getcwd() + '/input/' + invoice_filename
     pricetable_path = os.getcwd() + '/input/' + pricetable_filename
-    
+
     formulary_md_filename_no_extension = formulary_md_filename.split('.', 1)[0]
     pricetable_filename_no_extension = pricetable_filename.split('.', 1)[0]
-    
+
     formulary_updated_path = os.getcwd()+'/output/'+formulary_md_filename_no_extension+'_UPDATED.markdown'
     pricetable_updated_path = os.getcwd()+'/output/'+pricetable_filename_no_extension+'_UPDATED.tsv'
     
     # Processing Invoice
-    print('Processing Invoice...\n')
+    print('\nProcessing Invoice...')
 
     recordlist = read_csv(str(invoice_path))
     print('Number of Invoice Entries: {}'.format(len(recordlist)))
-    print(recordlist[0])
+    if verbose_debug:
+        print('Sample Invoice:')
+        print(recordlist[0])
 
     pricetable = read_pricetable(pricetable_path)
     pricetable = update_pricetable(pricetable, recordlist)
@@ -519,35 +521,38 @@ def rxparse(formulary_md_filename, invoice_filename, pricetable_filename):
     print('Number of Price Table Entries: {}\nEach Entry is a: {}'.format(len(pricetable), type(next(iter(pricetable.values())))))
 
     # Processing Formulary
-    print('Processing Formulary...\n')
+    print('\nProcessing Formulary Markdown...')
     formularylist = read_md(str(formulary_md_path))
     formularyparsed = parse_mddata(formularylist)
     print('Number of Formulary Records: {}'.format(len(formularyparsed)))
-    print(formularyparsed[0])
-    for i in range(0,4):
-        print('from Formulary: NAME:{} DOSECOST:{}'.format(FormularyRecord(formularyparsed[i]).NAME, FormularyRecord(formularyparsed[i]).DOSECOST))
+    if verbose_debug:
+        print('Extracted Formulary Entries:')
+        print(formularyparsed[0])
+        for i in range(0,4):
+            print('from Formulary: NAME:{} DOSECOST:{}'.format(FormularyRecord(formularyparsed[i]).NAME, FormularyRecord(formularyparsed[i]).DOSECOST))
 
     formulary = store_formulary(formularyparsed)
     
     # Updating Formulary Against Invoice
+    print('\nFinding Matches...')
     mcount, pricechanges, updatedformulary, softmatch, meds_without_match = formulary_update(formulary, pricetable)
     print('Number of medication matches found: {}\nNumber of price changes found: {}\nNumber of soft matches made: {}'.format(mcount, pricechanges, softmatch))
     
-    print('\n\nMeds without match: ')
-    for med in meds_without_match:
-        print(med)
+    if verbose_debug:
+        print('\nMedications without an invoice match: ')
+        for med in meds_without_match:
+            print(med)
 
-    for i in range(0,4):
-        print('updated Formulary markdown: {}'.format(updatedformulary[i]._to_markdown()))
+        for i in range(0,4):
+            print('updated Formulary markdown: {}'.format(updatedformulary[i]._to_markdown()))
     
     to_Markdown(updatedformulary, formulary_updated_path)
     to_TSV(updatedformulary, pricetable_updated_path)
     write_pricetable(pricetable, pricetable_path)
     
     # Test BLACKLISTED attribute
-
     blacklisted = [d for d in updatedformulary if d.BLACKLISTED]
-    print('The number of drugs are blacklisted: {}'.format(len(blacklisted)))
+    print('Number of blacklisted drugs: {}'.format(len(blacklisted)))
 
 if __name__ == "__main__":
     from sys import argv

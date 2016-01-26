@@ -4,6 +4,7 @@ from statistics import mean
 from fuzzywuzzy import fuzz
 from datetime import datetime
 from collections import namedtuple
+import os
 
 # Classes and Functions for reading and parsing invoices
 InvRec = namedtuple('InvoiceRecord', ['NAMEDOSE', 'NAME', 'DOSE', 'COST', 'CATEGORY', 'ITEMNUM',\
@@ -28,7 +29,7 @@ def read_csv(filename):
 
         return invoice
 
-def read_pricetable(pricetable_filename):
+def read_pricetable(pricetable_path):
     """Import persistent pricetable and store the most recent unique drug and price records.
 
     Load drug and price records from a persistent pricetable as InvRec(Collections.namedtuple) instances.
@@ -37,7 +38,7 @@ def read_pricetable(pricetable_filename):
     """
 
     # Open, read, and filter
-    with open(pricetable_filename, 'rU') as f:
+    with open(pricetable_path, 'rU') as f:
         
         # Instantiate csv.reader
         readerobj = csv.reader(f, delimiter='\t')
@@ -110,11 +111,11 @@ def update_pricetable(pricetable, invoice):
     
     return pricetable
 
-def write_pricetable(pricetable, pricetable_filename):
+def write_pricetable(pricetable, pricetable_path):
     """ Write as pricetable based on Invoice Records in CSV format.
     """
 
-    with open(pricetable_filename, "w") as f:
+    with open(pricetable_path, "w") as f:
         header_str = "\t".join(['NAME DOSE', 'COST', 'ITEM NUM', 'CATEGORY', 'REQDATE'])
         writeList = [header_str]
 
@@ -480,7 +481,7 @@ def to_Markdown(formulary, updated_markdown_filename):
     with open(updated_markdown_filename, "w") as f:
         f.write('\n'.join(output))
 
-def to_TSV(formulary, updated_pricetable_filename):
+def to_TSV(formulary, updated_pricetable_path):
     '''Outputs updated Formulary database to CSV
     '''
     output = []
@@ -488,38 +489,35 @@ def to_TSV(formulary, updated_pricetable_filename):
     for record in formulary:
         output.append(record._to_csv())
 
-    with open(updated_pricetable_filename, "w") as f:
+    with open(updated_pricetable_path, "w") as f:
         f.write('\n'.join(output))
 
 """
 Janky ass debug functions
 """
+def rxparse(formulary_markdown_filename, invoice_filename, pricetable_filename):
+    formulary_path = os.getcwd() + '/input/' + formulary_markdown_filename
+    invoice_path = os.getcwd() + '/input/' + invoice_filename
+    pricetable_path = os.getcwd() + '/input/' + pricetable_filename
 
-if __name__ == "__main__":
-    import sys
-    import os
-
-    invoice = os.getcwd() + "/data/invoice.csv"
-    formulary = os.getcwd() + "/data/rx.md"
-    pricetable_filename = os.getcwd() + "/data/persistent-pricetable.tsv"
-    markdown_updated_filename = os.getcwd() + "/output/Formulary_updated.markdown"
-    formulary_updated_filename = os.getcwd() + "/output/Formulary_updated.tsv"
- 
+    markdown_updated_filename = os.getcwd() + '/output/Formulary_updated.markdown'
+    formulary_updated_filename = os.getcwd() + '/output/Formulary_updated.tsv'
+    
     # Processing Invoice
     print('Processing Invoice...\n')
 
-    recordlist = read_csv(str(invoice))
+    recordlist = read_csv(str(invoice_path))
     print('Number of Invoice Entries: {}'.format(len(recordlist)))
     print(recordlist[0])
 
-    pricetable = read_pricetable(pricetable_filename)
+    pricetable = read_pricetable(pricetable_path)
     pricetable = update_pricetable(pricetable, recordlist)
 
     print('Number of Price Table Entries: {}\nEach Entry is a: {}'.format(len(pricetable), type(next(iter(pricetable.values())))))
 
     # Processing Formulary
     print('Processing Formulary...\n')
-    formularylist = read_md(str(formulary))
+    formularylist = read_md(str(formulary_path))
     formularyparsed = parse_mddata(formularylist)
     print('Number of Formulary Records: {}'.format(len(formularyparsed)))
     print(formularyparsed[0])
@@ -541,9 +539,13 @@ if __name__ == "__main__":
     
     to_Markdown(updatedformulary, markdown_updated_filename)
     to_TSV(updatedformulary, formulary_updated_filename)
-    write_pricetable(pricetable, pricetable_filename)
+    write_pricetable(pricetable, pricetable_path)
     
     # Test BLACKLISTED attribute
 
     blacklisted = [d for d in updatedformulary if d.BLACKLISTED]
     print('The number of drugs are blacklisted: {}'.format(len(blacklisted)))
+
+if __name__ == "__main__":
+    from sys import argv
+    rxparse(argv[1], argv[2], argv[3])

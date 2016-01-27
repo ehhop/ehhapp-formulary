@@ -496,7 +496,12 @@ def to_TSV(formulary, updated_pricetable_path):
 Janky ass debug functions
 """
 def update_rx(formulary_md_filename, invoice_filename, pricetable_filename, verbose_debug=False):
-    print(formulary_md_filename)
+    '''Main function of script. Creates updated formulary markdown and pricetable.
+    Data files need to be place in a subfolder named "input".
+    Input varibles are filenames without the file path prefix.
+    
+    Verbose output displays subsets of data during each step of processing.
+    '''
     current_script_path = os.path.realpath(__file__)[:-len('/rxparse.py')]
     formulary_md_path = current_script_path + '/input/' + formulary_md_filename
     invoice_path = current_script_path + '/input/' + invoice_filename
@@ -558,4 +563,4 @@ def update_rx(formulary_md_filename, invoice_filename, pricetable_filename, verb
 
 if __name__ == "__main__":
     from sys import argv
-    rxparse(argv[1], argv[2], argv[3])
+    update_rx(argv[1], argv[2], argv[3])

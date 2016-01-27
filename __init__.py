@@ -42,20 +42,15 @@ def process_file():
 			filename = secure_filename(file.filename)
 			file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
 			filename_list.append(file.filename)
-			return redirect(url_for('run_rxparse', filename_list=filename_list))
+	formulary = str(filename_list[0])
+	invoice = str(filename_list[1])
+	pricetable = str(filename_list[2])
+	update_rx(formulary, invoice, pricetable)
+	return render_template('upload.html', filename_list=filename_list)
 
 @app.route('/uploads/<filename>')
 def uploaded_file(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'],filename)
-
-@app.route('/calculate/<filename_list>')
-def run_rxparse(filename_list):
-	formulary = filename_list[0]
-	invoice = filename_list[1]
-	pricetable = filename_list[2]
-	update_rx(formulary, invoice, pricetable)
-	error_prompt = 'success'
-	return render_template('index.html', error_prompt=error_prompt)
 
 if __name__ == '__main__':
 	port = int(os.environ.get('PORT', 5050))

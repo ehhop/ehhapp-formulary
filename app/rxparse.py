@@ -377,7 +377,7 @@ def price_disc(dcost, invcost):
     else:
         new_price = False
     return new_price
-        
+
 def formulary_update(formulary, pricetable, set_similarity_rating=100):
     """Update drugs in formulary with prices from invoice.
     """
@@ -496,15 +496,17 @@ def to_TSV(formulary, updated_pricetable_path):
 Janky ass debug functions
 """
 def update_rx(formulary_md_filename, invoice_filename, pricetable_filename, verbose_debug=False):
-    formulary_md_path = os.getcwd() + '/input/' + formulary_md_filename
-    invoice_path = os.getcwd() + '/input/' + invoice_filename
-    pricetable_path = os.getcwd() + '/input/' + pricetable_filename
+    print(formulary_md_filename)
+    current_script_path = os.path.realpath(__file__)[:-len('/rxparse.py')]
+    formulary_md_path = current_script_path + '/input/' + formulary_md_filename
+    invoice_path = current_script_path + '/input/' + invoice_filename
+    pricetable_path = current_script_path + '/input/' + pricetable_filename
 
     formulary_md_filename_no_extension = formulary_md_filename.split('.', 1)[0]
     pricetable_filename_no_extension = pricetable_filename.split('.', 1)[0]
 
-    formulary_updated_path = os.getcwd()+'/output/'+formulary_md_filename_no_extension+'_UPDATED.markdown'
-    pricetable_updated_path = os.getcwd()+'/output/'+pricetable_filename_no_extension+'_UPDATED.tsv'
+    formulary_updated_path = current_script_path+'/output/'+formulary_md_filename_no_extension+'_UPDATED.markdown'
+    pricetable_updated_path = current_script_path+'/output/'+pricetable_filename_no_extension+'_UPDATED.tsv'
     
     # Processing Invoice
     print('\nProcessing Invoice...')

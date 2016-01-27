@@ -45,8 +45,8 @@ def process_file():
 	formulary = str(filename_list[0])
 	invoice = str(filename_list[1])
 	pricetable = str(filename_list[2])
-	update_rx(formulary, invoice, pricetable)
-	return render_template('upload.html', filename_list=filename_list)
+	pricetable_unmatched_meds = update_rx(formulary, invoice, pricetable)
+	return render_template('upload.html', filename_list=filename_list, pricetable_unmatched_meds=pricetable_unmatched_meds)
 
 @app.route('/uploads/<filename>')
 def uploaded_file(filename):

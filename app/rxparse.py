@@ -6,6 +6,12 @@ from datetime import datetime
 from collections import namedtuple
 import os
 
+
+"""
+###########################################################################
+## Part1: Functions for updating the pricetable based on lastest invoice ##
+###########################################################################
+"""
 # Classes and Functions for reading and parsing invoices
 InvRec = namedtuple('InvoiceRecord', ['NAMEDOSE', 'NAME', 'DOSE', 'COST', 'CATEGORY', 'ITEMNUM',\
         'REQDATE'])
@@ -30,7 +36,7 @@ def read_csv(filename):
         return invoice
 
 def read_pricetable(pricetable_path):
-    """Import persistent pricetable and store the most recent unique drug and price records.
+    """Import unique drug and price records from a persistent pricetable.
 
     Load drug and price records from a persistent pricetable as InvRec(Collections.namedtuple) instances.
     Store uniquely in a dictionary by using the NAMEDOSE field as a key and the InvRec 
@@ -72,9 +78,9 @@ def read_pricetable(pricetable_path):
         
         return pricetable
 
-def update_pricetable(pricetable, invoice):
-    """Update pricetable using only unique and most recent drug and price records.
- 
+def compare_pricetable(pricetable, invoice):
+    """Update pricetable using only unique and most recent drug and price records from medication invoice.
+    
     Parse drug and price records and load them as InvRec(Collections.namedtuple) instances.
     Store uniquely in a dictionary by using the NAMEDOSE field as a key and the InvRec 
     instance as the value. If an entry with a more recent price is encountered, update the dictionary entry. 
@@ -131,6 +137,11 @@ def write_pricetable(pricetable, pricetable_path):
 # ---
 # ---
 
+"""
+########################################################################################
+## Part2: Functions for updating the EHHapp formulary based on the updated pricetable ##
+########################################################################################
+"""
 # Classes and functions for reading and parsing the current EHHOP Formulary
 class FormularyRecord:
     """Define a class that corresponds to a formulary entry.
@@ -217,7 +228,6 @@ class FormularyRecord:
     def _set_PRICETABLE(self):
         """Produce a dictionary to assist price check.
         """
-
         for dosecost in self.DOSECOST:
             dose = dosecost[1]
             cost = dosecost[0]
@@ -390,8 +400,9 @@ def formulary_update(formulary, pricetable, set_similarity_rating=100):
     # Keeps track of the number of price changes
     pricechanges = 0
 
-    # Keeps track of formulary medications without a match in the pricetable
-    meds_without_match = []
+    # Keeps track of pricetable medications without a match in the pricetable
+    formulary_unmatched_meds = []
+    pricetable_unmatched_meds = []
 
     # Loop through each FormularyRecord
     for record in formulary:
@@ -399,7 +410,7 @@ def formulary_update(formulary, pricetable, set_similarity_rating=100):
         record._set_PRICETABLE()
 
         # Keeps track of whether there a match for each formulary medication in the pricetable
-        has_match = False
+        has_formulary_match = False
 
         # Then loop through each dose/cost pair for the given record
         for k, v in record.PRICETABLE.items():
@@ -416,6 +427,9 @@ def formulary_update(formulary, pricetable, set_similarity_rating=100):
                 invcost = ir.COST.lower()
                 itemnum = ir.ITEMNUM
 
+                # Keeps track of whether there a match for each pricetable medication
+                has_pricetable_match = False
+
                 # If the name and dose are a subset of the pricetable key then we have a match
                 if match_string_fuzzy(dname, invnamedose, set_similarity_rating):  # Use fuzzy matching to capture edge cases
                 
@@ -424,7 +438,8 @@ def formulary_update(formulary, pricetable, set_similarity_rating=100):
 
                     if match_string(dname, invnamedose):
                         
-                        has_match = True
+                        has_formulary_match = True
+                        has_pricetable_match = True
                         
                         if dosepatt.search(invnamedose):
 
@@ -448,16 +463,20 @@ def formulary_update(formulary, pricetable, set_similarity_rating=100):
                                 user_input = input('Please try again. Are these the same medication?\nPlease type \'y\' or \'n\': ') # error check for user input
 
                             if user_input == 'y':
-                                has_match = True
+                                has_formulary_match = True
+                                has_pricetable_match = True
                                 mcount += 1
                                 record.PRICETABLE[k] = v._replace(COST = invcost, ITEMNUM = itemnum)
                             elif user_input == 'n':
                                 print('This medication price will not be changed.')
-        if has_match == False:
+        if has_formulary_match == False:
             capture = dname+' '+ddose
-            meds_without_match.append(capture)
+            formulary_unmatched_meds.append(capture)
+        if has_pricetable_match == False:
+            capture = dname+' '+ddose
+            pricetable_unmatched_meds.append(capture)
 
-    return mcount, pricechanges, formulary, smatchcount, meds_without_match
+    return mcount, pricechanges, formulary, smatchcount, formulary_unmatched_meds, pricetable_unmatched_meds
 
 """
 ### WORK-IN-PROGRESS
@@ -515,7 +534,7 @@ def update_rx(formulary_md_filename, invoice_filename, pricetable_filename, verb
     
     # Processing Invoice
     print('\nProcessing Invoice...')
-
+    
     recordlist = read_csv(str(invoice_path))
     print('Number of Invoice Entries: {}'.format(len(recordlist)))
     if verbose_debug:
@@ -523,7 +542,7 @@ def update_rx(formulary_md_filename, invoice_filename, pricetable_filename, verb
         print(recordlist[0])
 
     pricetable = read_pricetable(pricetable_path)
-    pricetable = update_pricetable(pricetable, recordlist)
+    pricetable = compare_pricetable(pricetable, recordlist)
 
     print('Number of Price Table Entries: {}\nEach Entry is a: {}'.format(len(pricetable), type(next(iter(pricetable.values())))))
 
@@ -542,12 +561,17 @@ def update_rx(formulary_md_filename, invoice_filename, pricetable_filename, verb
     
     # Updating Formulary Against Invoice
     print('\nFinding Matches...')
-    mcount, pricechanges, updatedformulary, softmatch, meds_without_match = formulary_update(formulary, pricetable)
+    mcount, pricechanges, updatedformulary, softmatch, formulary_unmatched_meds, pricetable_unmatched_meds = formulary_update(formulary, pricetable)
     print('Number of medication matches found: {}\nNumber of price changes found: {}\nNumber of soft matches made: {}'.format(mcount, pricechanges, softmatch))
-    
+    for med in pricetable_unmatched_meds:
+        print(med)
+        
     if verbose_debug:
-        print('\nMedications without an invoice match: ')
-        for med in meds_without_match:
+        print('\nInvoice medications without an invoice match: ')
+        for med in pricetable_unmatched_meds:
+            print(med)
+        print('\nFormulary medications without an invoice match: ')
+        for med in formulary_unmatched_meds:
             print(med)
 
         for i in range(0,4):
@@ -560,6 +584,7 @@ def update_rx(formulary_md_filename, invoice_filename, pricetable_filename, verb
     # Test BLACKLISTED attribute
     blacklisted = [d for d in updatedformulary if d.BLACKLISTED]
     print('Number of blacklisted drugs: {}'.format(len(blacklisted)))
+    return pricetable_unmatched_meds
 
 if __name__ == "__main__":
     from sys import argv

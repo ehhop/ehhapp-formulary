@@ -3,13 +3,20 @@
   <title>EHHapp Formulary Updater</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="/static/css/bootstrap.min.css">
+  <style>
+  pre {
+    line-height: 90%;
+  }
+  </style>
 </head>
+
 <body>
   <div class="container">
+
     <div class="header">
       <h3 class="text-muted">Uploaded files</h3>
     </div>
-    <hr/> <!--boarder-->
+    <hr/> <!--border-->
     <div>
       This is a list of the files you just uploaded, click on them to load/download them
       <ul>
@@ -18,33 +25,44 @@
         {% endfor %}
       </ul>
     </div>
+
     <div class="header">
-      <h3 class="text-muted">Code to manage a Upload</h3>
+      <h4 class="text-muted">Invoice Medications Without Matches</h4>
     </div>
     <hr/>    
-      <pre>
-      @app.route('/upload', methods=['POST'])
-      def upload():
-          # Get the name of the uploaded file
-          #file = request.files['file']
-          uploaded_files = request.files.getlist("file[]")
-          filenames = []
-          for file in uploaded_files:
-              # Check if the file is one of the allowed types/extensions
-              if file and allowed_file(file.filename):
-                  # Make the filename safe, remove unsupported chars
-                  filename = secure_filename(file.filename)
-                  # Move the file form the temporal folder to the upload
-                  # folder we setup
-                  file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-                  filenames.append(filename)
-                  # Redirect the user to the uploaded_file route, which
-                  # will basicaly show on the browser the uploaded file
-          # Load an html page with a link to each uploaded file
-          return render_template('upload.html', filenames=filenames)
-        </pre>
-      </div>
+    <pre>
+      {% for med in pricetable_unmatched_meds %}
+      {{med}}
+      {% endfor %}
+    </pre>
+
+    <div class="header">
+      <h4 class="text-muted">Code to manage a Upload</h4>
     </div>
-  </body>
+    <hr/>    
+    <pre>
+    @app.route('/upload', methods=['POST'])
+    def upload():
+        # Get the name of the uploaded file
+        #file = request.files['file']
+        uploaded_files = request.files.getlist("file[]")
+        filenames = []
+        for file in uploaded_files:
+            # Check if the file is one of the allowed types/extensions
+            if file and allowed_file(file.filename):
+                # Make the filename safe, remove unsupported chars
+                filename = secure_filename(file.filename)
+                # Move the file form the temporal folder to the upload
+                # folder we setup
+                file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                filenames.append(filename)
+                # Redirect the user to the uploaded_file route, which
+                # will basicaly show on the browser the uploaded file
+        # Load an html page with a link to each uploaded file
+        return render_template('upload.html', filenames=filenames)
+    </pre>
+    </div>
+  </div>
+</body>
 </html>
  

@@ -4,50 +4,69 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="/static/css/bootstrap.min.css">
   <style>
-  pre {
+  .output-box {
     line-height: 90%;
+    display: block;
+    padding: 5px 10px 5px 10px;
+    margin: 10px 0px 10px 0px;
+    font-size: 13px;
+    line-height: 1.42857;
+    word-break: break-all;
+    word-wrap: break-word;
+    color: #333;
+    background-color: #F5F5F5;
+    border: 1px solid #CCC;
+    border-radius: 4px;
+    font-family: Menlo,Monaco,Consolas,"Courier New",monospace;
+  }
+  .btn-toolbar {
+    margin-left: 0px;
+  }
+  .btn-group {
+    margin-left: 0px;
+    margin-right: 5px;
+  }
+  .btn {
+    margin-left: 0px;
+  }
+  #output-box-text {
+    margin: 0 0 0 0;
   }
   </style>
 </head>
 
 <body>
   <div class="container">
-
     <div class="header">
       <h3 class="text-muted">Comparision Results</h3>
     </div>
     <hr/> <!--border-->
-    <div>
-      <div class="header">
-        <h4 class="text-muted">Output Files</h4>
-        <p>Click to download files.</p>
-      </div>
-      <ul>
-        {% for file in output_filename_list %}
-          <li><a href="{{url_for('output_file', filename=file)}}">{{file}}</a></li>
-        {% endfor %}
-      </ul>
-    </div>
 
     <div class="header">
       <h4 class="text-muted">Match Summary</h4>
     </div>
-    <pre>
-      {% for output in screen_output %}
-      {{output}}
-      {% endfor %}
-    </pre>
+    <div class="output-box">
+        {% for output in screen_output %}<p id="output-box-text">{{output}}</p>{% endfor %}
+    </div>
+
+    <div>
+      <div class="header">
+        <h4 class="text-muted">Download Output Files</h4>
+      </div>
+      <span class="btn-toolbar">
+        {% for file in output_filename_list %}
+        <a class="btn btn-group btn-primary" href="{{url_for('output_file', filename=file)}}">{{file}}</a>
+        {% endfor %}
+      </span>
+    </div>
 
     <div class="header">
       <h4 class="text-muted">Invoice Medications Without Matches</h4>
     </div>
-    <pre>
-      {% for med in pricetable_unmatched_meds %}
-      {{med}}
-      {% endfor %}
-    </pre>
-
+    <div class="output-box">
+      {% for med in pricetable_unmatched_meds %}<p id="output-box-text">{{med}}</p>{% endfor %}
     </div>
+
   </div>
 </body>
 </html>

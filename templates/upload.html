@@ -14,18 +14,29 @@
   <div class="container">
 
     <div class="header">
-      <h3 class="text-muted">Uploaded files</h3>
+      <h3 class="text-muted">Comparision Results</h3>
     </div>
     <hr/> <!--border-->
     <div>
-      This is a list of the files you just uploaded, click on them to load/download them
+      <div class="header">
+        <h4 class="text-muted">Output Files</h4>
+        <p>Click to download files.</p>
+      </div>
+      <ul>
+        {% for file in output_filename_list %}
+          <li><a href="{{url_for('output_file', filename=file)}}">{{file}}</a></li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <div>
+      <div class="header">
+        <h4 class="text-muted">Uploaded Files</h4>
+        <p>Click to download files.</p>
+      </div>
       <ul>
         {% for file in upload_filename_list %}
           <li><a href="{{url_for('uploaded_file', filename=file)}}">{{file}}</a></li>
-        {% endfor %}
-        
-        {% for file in output_filename_list %}
-          <li><a href="{{url_for('output_file', filename=file)}}">{{file}}</a></li>
         {% endfor %}
       </ul>
     </div>
@@ -33,7 +44,6 @@
     <div class="header">
       <h4 class="text-muted">Invoice Medications Without Matches</h4>
     </div>
-    <hr/>    
     <pre>
       {% for med in pricetable_unmatched_meds %}
       {{med}}

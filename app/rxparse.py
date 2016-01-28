@@ -404,31 +404,28 @@ def formulary_update(formulary, pricetable, set_similarity_rating=100):
     formulary_unmatched_meds = []
     pricetable_unmatched_meds = []
 
-    # Loop through each FormularyRecord
-    for record in formulary:
-        # Set the PRICETABLE attribute
-        record._set_PRICETABLE()
+    # Look up a matching record stored in the invoice-derived pricetable
+    for nd, ir in pricetable.items():
+        invnamedose = nd.lower()
+        invcost = ir.COST.lower()
+        itemnum = ir.ITEMNUM
 
-        # Keeps track of whether there a match for each formulary medication in the pricetable
-        has_formulary_match = False
+        # Keeps track of whether there a match for each pricetable medication
+        has_pricetable_match = False
 
-        # Then loop through each dose/cost pair for the given record
-        for k, v in record.PRICETABLE.items():
-            dcost = v.COST.lower()
-            dnamedose = k.lower()
-            dname = v.NAME.lower()
-            ddose = v.DOSE.lower()
+        # Loop through each FormularyRecord
+        for record in formulary:
+            # Set the PRICETABLE attribute
+            record._set_PRICETABLE()
 
-            dosepatt = re.compile(r"\b{}".format(ddose))
+            # Then loop through each dose/cost pair for the given record
+            for k, v in record.PRICETABLE.items():
+                dcost = v.COST.lower()
+                dnamedose = k.lower()
+                dname = v.NAME.lower()
+                ddose = v.DOSE.lower()
 
-            # Look up a matching record stored in the invoice-derived pricetable
-            for nd, ir in pricetable.items():
-                invnamedose = nd.lower()
-                invcost = ir.COST.lower()
-                itemnum = ir.ITEMNUM
-
-                # Keeps track of whether there a match for each pricetable medication
-                has_pricetable_match = False
+                dosepatt = re.compile(r"\b{}".format(ddose))
 
                 # If the name and dose are a subset of the pricetable key then we have a match
                 if match_string_fuzzy(dname, invnamedose, set_similarity_rating):  # Use fuzzy matching to capture edge cases
@@ -438,7 +435,6 @@ def formulary_update(formulary, pricetable, set_similarity_rating=100):
 
                     if match_string(dname, invnamedose):
                         
-                        has_formulary_match = True
                         has_pricetable_match = True
                         
                         if dosepatt.search(invnamedose):
@@ -463,20 +459,16 @@ def formulary_update(formulary, pricetable, set_similarity_rating=100):
                                 user_input = input('Please try again. Are these the same medication?\nPlease type \'y\' or \'n\': ') # error check for user input
 
                             if user_input == 'y':
-                                has_formulary_match = True
                                 has_pricetable_match = True
                                 mcount += 1
                                 record.PRICETABLE[k] = v._replace(COST = invcost, ITEMNUM = itemnum)
                             elif user_input == 'n':
                                 print('This medication price will not be changed.')
-        if has_formulary_match == False:
-            capture = dname+' '+ddose
-            formulary_unmatched_meds.append(capture)
         if has_pricetable_match == False:
-            capture = dname+' '+ddose
+            capture = invnamedose
             pricetable_unmatched_meds.append(capture)
 
-    return mcount, pricechanges, formulary, smatchcount, formulary_unmatched_meds, pricetable_unmatched_meds
+    return mcount, pricechanges, formulary, smatchcount, pricetable_unmatched_meds
 
 """
 ### WORK-IN-PROGRESS
@@ -562,17 +554,12 @@ def update_rx(formulary_md_filename, invoice_filename, pricetable_filename, verb
     
     # Updating Formulary Against Invoice
     print('\nFinding Matches...')
-    mcount, pricechanges, updatedformulary, softmatch, formulary_unmatched_meds, pricetable_unmatched_meds = formulary_update(formulary, pricetable)
+    mcount, pricechanges, updatedformulary, softmatch, pricetable_unmatched_meds = formulary_update(formulary, pricetable)
     print('Number of medication matches found: {}\nNumber of price changes found: {}\nNumber of soft matches made: {}'.format(mcount, pricechanges, softmatch))
-    for med in pricetable_unmatched_meds:
-        print(med)
 
     if verbose_debug:
         print('\nInvoice medications without an invoice match: ')
         for med in pricetable_unmatched_meds:
-            print(med)
-        print('\nFormulary medications without an invoice match: ')
-        for med in formulary_unmatched_meds:
             print(med)
 
         for i in range(0,4):
@@ -585,6 +572,7 @@ def update_rx(formulary_md_filename, invoice_filename, pricetable_filename, verb
     # Test BLACKLISTED attribute
     blacklisted = [d for d in updatedformulary if d.BLACKLISTED]
     print('Number of blacklisted drugs: {}'.format(len(blacklisted)))
+
     return pricetable_unmatched_meds, output_filename_list
 
 if __name__ == "__main__":

@@ -33,13 +33,13 @@ def process_file():
 		if file and allowed_file(file.filename):
 			filename = secure_filename(file.filename)
 			file.save(os.path.join(app.config['UPLOAD_FOLDER'],filename))
-			upload_filename_list.append(file.filename)
+			upload_filename_list.append(file.filename) # old: currenly not tracking upload files
 	formulary = str(upload_filename_list[0])
 	invoice = str(upload_filename_list[1])
 	pricetable = str(upload_filename_list[2])
 
-	pricetable_unmatched_meds, output_filename_list = update_rx(formulary, invoice, pricetable)
-	return render_template('upload.html', upload_filename_list=upload_filename_list, output_filename_list=output_filename_list, pricetable_unmatched_meds=pricetable_unmatched_meds)
+	pricetable_unmatched_meds, output_filename_list, screen_output = update_rx(formulary, invoice, pricetable)
+	return render_template('upload.html', output_filename_list=output_filename_list, screen_output=screen_output, pricetable_unmatched_meds=pricetable_unmatched_meds)
 
 @app.route('/uploads/<filename>')
 def uploaded_file(filename):

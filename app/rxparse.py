@@ -506,6 +506,11 @@ def to_TSV(formulary, updated_pricetable_path):
 """
 Janky ass debug functions
 """
+def screen_and_console_print(output, screen_output):
+    print(output)
+    screen_output.append(output)
+    return screen_output
+
 def update_rx(formulary_md_filename, invoice_filename, pricetable_filename, verbose_debug=False):
     '''Main function of script. Creates updated formulary markdown and pricetable.
     Data files need to be place in a subfolder named "input".
@@ -525,11 +530,15 @@ def update_rx(formulary_md_filename, invoice_filename, pricetable_filename, verb
     pricetable_updated_path = current_script_path+'/output/'+pricetable_filename_no_extension+'_UPDATED.tsv'
     output_filename_list = [formulary_md_filename_no_extension+'_UPDATED.markdown', pricetable_filename_no_extension+'_UPDATED.tsv']
     
+    # Create container for webpage output
+    screen_output = []
+
     # Processing Invoice
     print('\nProcessing Invoice...')
     
     recordlist = read_csv(str(invoice_path))
-    print('Number of Invoice Entries: {}'.format(len(recordlist)))
+    screen_output = screen_and_console_print(('Number of Invoice Entries: {}'.format(len(recordlist))), screen_output)
+
     if verbose_debug:
         print('Sample Invoice:')
         print(recordlist[0])
@@ -537,13 +546,14 @@ def update_rx(formulary_md_filename, invoice_filename, pricetable_filename, verb
     pricetable = read_pricetable(pricetable_path)
     pricetable = compare_pricetable(pricetable, recordlist)
 
-    print('Number of Price Table Entries: {}\nEach Entry is a: {}'.format(len(pricetable), type(next(iter(pricetable.values())))))
+    screen_output = screen_and_console_print('Number of Price Table Entries: {}'.format(len(pricetable)), screen_output)
+    print('Each Entry is a: {}'.format(type(next(iter(pricetable.values())))))
 
     # Processing Formulary
     print('\nProcessing Formulary Markdown...')
     formularylist = read_md(str(formulary_md_path))
     formularyparsed = parse_mddata(formularylist)
-    print('Number of Formulary Records: {}'.format(len(formularyparsed)))
+    screen_output = screen_and_console_print('Number of Formulary Records: {}'.format(len(formularyparsed)), screen_output)
     if verbose_debug:
         print('Extracted Formulary Entries:')
         print(formularyparsed[0])
@@ -555,10 +565,12 @@ def update_rx(formulary_md_filename, invoice_filename, pricetable_filename, verb
     # Updating Formulary Against Invoice
     print('\nFinding Matches...')
     mcount, pricechanges, updatedformulary, softmatch, pricetable_unmatched_meds = formulary_update(formulary, pricetable)
-    print('Number of medication matches found: {}\nNumber of price changes found: {}\nNumber of soft matches made: {}'.format(mcount, pricechanges, softmatch))
+    screen_output = screen_and_console_print('Number of medication matches found: {}\nNumber of price changes found: {}\nNumber of soft matches made: {}'.format(mcount, pricechanges, softmatch), screen_output)
+
+    screen_output = screen_and_console_print('Number of invoice medications without match: {}'.format(len(pricetable_unmatched_meds)), screen_output)
 
     if verbose_debug:
-        print('\nInvoice medications without an invoice match: ')
+        print('Number of invoice medications without match')
         for med in pricetable_unmatched_meds:
             print(med)
 
@@ -571,9 +583,9 @@ def update_rx(formulary_md_filename, invoice_filename, pricetable_filename, verb
     
     # Test BLACKLISTED attribute
     blacklisted = [d for d in updatedformulary if d.BLACKLISTED]
-    print('Number of blacklisted drugs: {}'.format(len(blacklisted)))
+    screen_output = screen_and_console_print('Number of blacklisted drugs: {}'.format(len(blacklisted)), screen_output)
 
-    return pricetable_unmatched_meds, output_filename_list
+    return pricetable_unmatched_meds, output_filename_list, screen_output
 
 if __name__ == "__main__":
     from sys import argv

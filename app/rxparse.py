@@ -565,10 +565,11 @@ def update_rx(formulary_md_filename, invoice_filename, pricetable_filename, verb
     # Updating Formulary Against Invoice
     print('\nFinding Matches...')
     mcount, pricechanges, updatedformulary, softmatch, pricetable_unmatched_meds = formulary_update(formulary, pricetable)
-    screen_output = screen_and_console_print('Number of medication matches found: {}\nNumber of price changes found: {}\nNumber of soft matches made: {}'.format(mcount, pricechanges, softmatch), screen_output)
-
+    screen_output = screen_and_console_print('Number of medication matches found: {}'.format(mcount), screen_output)
+    screen_output = screen_and_console_print('Number of partial matches made: {}'.format(softmatch), screen_output)
+    screen_output = screen_and_console_print('Number of price changes found: {}'.format(pricechanges), screen_output)
     screen_output = screen_and_console_print('Number of invoice medications without match: {}'.format(len(pricetable_unmatched_meds)), screen_output)
-
+    
     if verbose_debug:
         print('Number of invoice medications without match')
         for med in pricetable_unmatched_meds:

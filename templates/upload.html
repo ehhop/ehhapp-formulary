@@ -20,8 +20,12 @@
     <div>
       This is a list of the files you just uploaded, click on them to load/download them
       <ul>
-        {% for file in filename_list %}
+        {% for file in upload_filename_list %}
           <li><a href="{{url_for('uploaded_file', filename=file)}}">{{file}}</a></li>
+        {% endfor %}
+        
+        {% for file in output_filename_list %}
+          <li><a href="{{url_for('output_file', filename=file)}}">{{file}}</a></li>
         {% endfor %}
       </ul>
     </div>
@@ -60,7 +64,7 @@
                 # will basicaly show on the browser the uploaded file
         # Load an html page with a link to each uploaded file
         return render_template('upload.html', filenames=filenames)
-    </pre>
+      </pre>
     </div>
   </div>
 </body>

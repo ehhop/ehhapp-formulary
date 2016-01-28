@@ -531,6 +531,7 @@ def update_rx(formulary_md_filename, invoice_filename, pricetable_filename, verb
 
     formulary_updated_path = current_script_path+'/output/'+formulary_md_filename_no_extension+'_UPDATED.markdown'
     pricetable_updated_path = current_script_path+'/output/'+pricetable_filename_no_extension+'_UPDATED.tsv'
+    output_filename_list = [formulary_md_filename_no_extension+'_UPDATED.markdown', pricetable_filename_no_extension+'_UPDATED.tsv']
     
     # Processing Invoice
     print('\nProcessing Invoice...')
@@ -565,7 +566,7 @@ def update_rx(formulary_md_filename, invoice_filename, pricetable_filename, verb
     print('Number of medication matches found: {}\nNumber of price changes found: {}\nNumber of soft matches made: {}'.format(mcount, pricechanges, softmatch))
     for med in pricetable_unmatched_meds:
         print(med)
-        
+
     if verbose_debug:
         print('\nInvoice medications without an invoice match: ')
         for med in pricetable_unmatched_meds:
@@ -584,7 +585,7 @@ def update_rx(formulary_md_filename, invoice_filename, pricetable_filename, verb
     # Test BLACKLISTED attribute
     blacklisted = [d for d in updatedformulary if d.BLACKLISTED]
     print('Number of blacklisted drugs: {}'.format(len(blacklisted)))
-    return pricetable_unmatched_meds
+    return pricetable_unmatched_meds, output_filename_list
 
 if __name__ == "__main__":
     from sys import argv

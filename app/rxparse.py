@@ -433,16 +433,15 @@ def formulary_update(formulary, pricetable, set_similarity_rating=100):
 
 				# If the name and dose are a subset of the pricetable key then we have a match
 				if match_string_fuzzy(mdname, invnamedose, set_similarity_rating=70):  # Use fuzzy matching to capture edge cases
-				
-					softmatch = True
-					smatchcount += 1
+					
+					if dosepatt.search(invnamedose):
 
-					if match_string(mdname, invnamedose):
-						
-						has_pricetable_match = True
-						
-						if dosepatt.search(invnamedose):
+						softmatch = True
+						smatchcount += 1
 
+						if match_string(mdname, invnamedose):
+							
+							has_pricetable_match = True
 							mcount += 1
 							
 							if price_disc(mdcost, invcost):

@@ -1,0 +1,43 @@
+<html>
+<head>
+  <title>EHHapp Formulary Updater</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="/static/css/bootstrap.min.css">
+  <link rel="stylesheet" href="/static/css/custom.css">
+</head>
+
+<body>
+  <div class="container">
+    <div class="header">
+      <h3 class="text-muted">Comparision Results</h3>
+    </div>
+    <hr/> <!--border-->
+
+    <div class="header">
+      <h4 class="text-muted">Match Summary</h4>
+    </div>
+    <div class="output-box">
+        {% for output in screen_output %}<p id="output-box-text">{{output}}</p>{% endfor %}
+    </div>
+
+    <div>
+      <div class="header">
+        <h4 class="text-muted">Download Output Files</h4>
+      </div>
+      <span class="btn-toolbar">
+        {% for file in output_filename_list %}
+        <a class="btn btn-group btn-primary" href="{{url_for('output_file', filename=file)}}">{{file}}</a>
+        {% endfor %}
+      </span>
+    </div>
+
+    <div class="header">
+      <h4 class="text-muted">Invoice Medications Without Matches</h4>
+    </div>
+    <div class="output-box">
+      {% for med in pricetable_unmatched_meds %}<p id="output-box-text">{{med}}</p>{% endfor %}
+    </div>
+
+  </div>
+</body>
+</html>

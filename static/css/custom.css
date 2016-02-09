@@ -1,68 +1,57 @@
-@media (min-width: 600px) {
-	.container {
-		max-width: 600px;
-	}
-	.col-height {
-	height: 50px;
-	}
-}
-
-.prompt-container {
-  height: 50px;
-  height: 100%;
-}
-.prompt-text {
-	word-wrap: normal;
-  height: 100%;
-  display: -webkit-box;
-  display: -moz-box;
-  display: -ms-flexbox;
-  display: -webkit-flex;
-  display: flex;
-  -webkit-box-pack: center;
-  -moz-box-pack: center;
-  -ms-flex-pack: center;
-  -webkit-justify-content: left;
-  justify-content: left;
-  -webkit-box-align: center;
-  -moz-box-align: center;
-  -ms-flex-align: center;
-  -webkit-align-items: center;
-  align-items: center;
-}
-.col-height {
-	height: 50px;
-}
-body {
-	background: #f4f4f4;
-}
-.layout {
-	padding: 50px;
-	font-family: Georgia, serif; }
-.navbar-text {
-	font-size: 18px;
-	text-align: center;
-}
-.navbar {
-	margin-bottom: 0px;
-}
-
-.btn-toolbar.spaced-bar {
-	height: 60px;
-}
-.slider {
-	vertical-align: middle;
-	width: 100%;
-}
-.bottom-page-description {
-	text-align: center;
-}
-.vertical-center {
+.btn-file {
 	position: relative;
-  	top: 50%;
-  	transform: translateY(-50%);
+	overflow: hidden;
 }
-.dropdown-menu {
-	margin-right: 15px;
-	margin-top: -6px
+.btn-file input[type=file] {
+	position: absolute;
+	top: 0;
+	right: 0;
+	min-width: 100%;
+	min-height: 100%;
+	font-size: 100px;
+	text-align: right;
+	filter: alpha(opacity=0);
+	opacity: 0;
+	outline: none;
+	background: white;
+	cursor: inherit;
+	display: block;
+}
+legend {
+	font-size: 16px;
+}
+label {
+	color: 444442;
+	margin-bottom: 10px;
+}
+.error-label {
+	color: red;
+}
+.output-box {
+	line-height: 90%;
+	display: block;
+	padding: 5px 10px 5px 10px;
+	margin: 10px 0px 10px 0px;
+	font-size: 13px;
+	line-height: 1.42857;
+	word-break: break-all;
+	word-wrap: break-word;
+	color: #333;
+	background-color: #F5F5F5;
+	border: 1px solid #CCC;
+	border-radius: 4px;
+	font-family: Menlo,Monaco,Consolas,"Courier New",monospace;
+}
+.btn-toolbar {
+	margin-left: 0px;
+}
+.btn-group {
+	margin-left: 0px;
+	margin-right: 5px;
+}
+.btn {
+	margin-left: 0px;
+}
+#output-box-text {
+	margin: 0 0 0 0;
 }

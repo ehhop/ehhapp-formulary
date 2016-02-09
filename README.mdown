@@ -3,6 +3,18 @@ Formulary Update
 
 Takes invoices, parses them, and updates drug prices along with other medication metadata and spits it out as EHHapp-compatible Markdown, and Pharmacy Team-approved data tables.
 
+Deployment
+----------
+
+The formulary update service has been constructed as a Flask app for deployment with Heroku. Heroku-specific deployment files include:
+
+* Procfile
+* runtime.txt
+
+Flask application is configured and initialized in:
+
+* \_\_init\_\_.py
+
 Case Study
 ----------
 

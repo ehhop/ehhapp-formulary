@@ -13,17 +13,27 @@
 		</div>
 		<hr/> <!--border-->
 
-		<div>
-			{% for k, v in fuzzymatches.items() %}
-			<div id="donate">
-			    <label class="blue"><input type="checkbox" name="toggle"><span>"{{v.MD_NAMEDOSE}}" is "{{v.INV_NAMEDOSE}}"</span></label>
+		<form role="form" method="post" action="/output" enctype="multipart/form-data">
+			<div class="container">
+				{% for k, v in fuzzymatches.items() %}
+				<div id="donate">
+				    <label class="blue"><input type="checkbox" name="matches" value="{{fuzzymatches[k]}}"><span>"{{v.MD_NAMEDOSE}}" is "{{v.INV_NAMEDOSE}}"</span></label>
+				</div>
+				{% endfor %}
 			</div>
-			{% endfor %}
-		</div>
+			<br>
 
-screen_output
-pricetable_unmatched_meds
-
+			<!--
+			screen_output
+			pricetable_unmatched_meds
+			-->
+			
+			<div class="form-group">
+				<p class="text-center">
+					<input id="singlebutton" name="singlebutton" class="btn btn-primary" type="submit" value="Submit" />
+				</p>
+			</div>
+		</form>
 	</div>
 </body>
 </html>

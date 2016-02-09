@@ -22,7 +22,7 @@ def index():
 	error_prompt = ''
 	return render_template('index.html', error_prompt=error_prompt)
 
-@app.route('/output', methods=['POST'])
+@app.route('/selection', methods=['POST'])
 def process_file():
 	uploaded_files = request.files.getlist("file")
 	upload_filename_list = []
@@ -39,7 +39,7 @@ def process_file():
 	pricetable = str(upload_filename_list[2])
 
 	pricetable_unmatched_meds, output_filename_list, screen_output, fuzzymatches = update_rx(formulary, invoice, pricetable)
-	return render_template('output.html', output_filename_list=output_filename_list, screen_output=screen_output, pricetable_unmatched_meds=pricetable_unmatched_meds)
+	return render_template('selection.html', output_filename_list=output_filename_list, screen_output=screen_output, pricetable_unmatched_meds=pricetable_unmatched_meds, fuzzymatches=fuzzymatches)
 
 @app.route('/output/<filename>')
 def output_file(filename):

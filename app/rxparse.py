@@ -15,6 +15,7 @@ import os
 # Classes and Functions for reading and parsing invoices
 InvRec = namedtuple('InvoiceRecord', ['NAMEDOSE', 'NAME', 'DOSE', 'COST', 'CATEGORY', 'ITEMNUM',\
 		'REQDATE'])
+FuzzyMatch = namedtuple('FuzzyMatch', ['MD_NAMEDOSE', 'MD_PRICE', 'INV_NAMEDOSE', 'INV_PRICE'])
 
 def read_csv(filename):
 	"""Read and filter a csv to create a list of drug and price records.
@@ -431,10 +432,10 @@ def formulary_update(formulary, pricetable, set_similarity_rating=100):
 
 				dosepatt = re.compile(r"\b{}".format(mddose))
 
-				# If the name and dose are a subset of the pricetable key then we have a match
 				# Use fuzzy matching to capture edge cases
 				if match_string_fuzzy(mdname, invnamedose, set_similarity_rating=70):
 					
+					# Is match formulary name is subset of pricetable name and doses are same
 					if dosepatt.search(invnamedose):
 
 						softmatch = True
@@ -450,28 +451,36 @@ def formulary_update(formulary, pricetable, set_similarity_rating=100):
 								record.PRICETABLE[k] = v._replace(COST = invcost, ITEMNUM = itemnum)
 								print("New price found for {} a.k.a. {}\nFormulary price: {}\nInvoice price: {}".format(invnamedose, k, mdcost, invcost))
 								print("Formulary updated so price is now {}".format(record.PRICETABLE[k].COST))
-															
-					else: # user input on edge cases
-						if dosepatt.search(invnamedose):
-							#fuzzymatches[key=invoice name dose] = [md name dose, md price, inv price]
-							fuzzymatches[invnamedose] = [mdnamedose, mdcost, invcost]
-							'''
-							print('\nFound a poor match...')
-							print('Formulary name and dose is: '+str(mdname)+' '+ str(mddose))
-							print('Invoice name and dose is: '+str(invnamedose))
-							
-							user_input = input('Are these the same medication?\nPlease type \'y\' or \'n\': ')
+					
+					# Is partial match if formulary name is not subset of pricetable name,
+					# formulary name is similar to pricetable name, and doses are same
+					else:
+						fuzzymatches[invnamedose] = FuzzyMatch(
+							MD_NAMEDOSE = mdnamedose,\
+							MD_PRICE = mdcost,\
+							INV_NAMEDOSE = invnamedose,\
+							INV_PRICE = invcost)
+						'''
+						print('\nFound a poor match...')
+						print('Formulary name and dose is: '+str(mdname)+' '+ str(mddose))
+						print('Invoice name and dose is: '+str(invnamedose))
+						
+						user_input = input('Are these the same medication?\nPlease type \'y\' or \'n\': ')
 
-							while not user_input == 'y' and not user_input == 'n':
-								user_input = input('Please try again. Are these the same medication?\nPlease type \'y\' or \'n\': ') # error check for user input
+						while not user_input == 'y' and not user_input == 'n':
+							user_input = input('Please try again. Are these the same medication?\nPlease type \'y\' or \'n\': ') # error check for user input
 
-							if user_input == 'y':
-								has_pricetable_match = True
-								mcount += 1
+						if user_input == 'y':
+							has_pricetable_match = True
+							mcount += 1
+							if price_disc(mdcost, invcost):
+								pricechanges += 1
 								record.PRICETABLE[k] = v._replace(COST = invcost, ITEMNUM = itemnum)
-							elif user_input == 'n':
-								print('This medication price will not be changed.')
-							'''
+								print("New price found for {} a.k.a. {}\nFormulary price: {}\nInvoice price: {}".format(invnamedose, k, mdcost, invcost))
+								print("Formulary updated so price is now {}".format(record.PRICETABLE[k].COST))
+						elif user_input == 'n':
+							print('This medication price will not be changed.')
+						'''
 		if has_pricetable_match == False:
 			capture = invnamedose
 			pricetable_unmatched_meds.append(capture)

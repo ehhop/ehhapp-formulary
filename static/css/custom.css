@@ -45,6 +45,9 @@ label {
 .btn-toolbar {
 	margin-left: 0px;
 }
+.btn-spaced {
+	margin-bottom:5;
+}
 .btn-group {
 	margin-left: 0px;
 	margin-right: 5px;

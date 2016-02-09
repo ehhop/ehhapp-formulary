@@ -9,36 +9,20 @@
 <body>
 	<div class="container">
 		<div class="header">
-			<h3 class="text-muted">Comparision Results</h3>
+			<h3 class="text-muted">Select Matching Medications</h3>
 		</div>
 		<hr/> <!--border-->
 
-		<div class="header">
-			<h4 class="text-muted">Match Summary</h4>
-		</div>
-		<div class="output-box">
-				{% for output in screen_output	%}<p id="output-box-text">{{output}}</p>{% endfor %}
-		</div>
-
 		<div>
-			<div class="header">
-				<h4 class="text-muted">Select Matching Medications</h4>
-			</div>
 			{% for k, v in fuzzymatches.items() %}
-			<span class="btn-toolbar">
-				<button class="btn btn-warning">"{{v.MD_NAMEDOSE}}" is "{{v.INV_NAMEDOSE}}"</button>
-			</span>
+			<div id="donate">
+			    <label class="blue"><input type="radio" name="toggle"><span>"{{v.MD_NAMEDOSE}}" is "{{v.INV_NAMEDOSE}}"</span></label>
+			</div>
 			{% endfor %}
-			{% for k in fuzzymatches.items() %}<p id="output-box-text">{{k}}</p>{% endfor %}
-	 		</div>
 		</div>
 
-		<div class="header">
-			<h4 class="text-muted">Invoice Medications Without Matches</h4>
-		</div>
-		<div class="output-box">
-			{% for med in pricetable_unmatched_meds %}<p id="output-box-text">{{med}}</p>{% endfor %}
-		</div>
+screen_output
+pricetable_unmatched_meds
 
 	</div>
 </body>

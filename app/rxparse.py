@@ -432,7 +432,8 @@ def formulary_update(formulary, pricetable, set_similarity_rating=100):
 				dosepatt = re.compile(r"\b{}".format(mddose))
 
 				# If the name and dose are a subset of the pricetable key then we have a match
-				if match_string_fuzzy(mdname, invnamedose, set_similarity_rating=70):  # Use fuzzy matching to capture edge cases
+				# Use fuzzy matching to capture edge cases
+				if match_string_fuzzy(mdname, invnamedose, set_similarity_rating=70):
 					
 					if dosepatt.search(invnamedose):
 
@@ -544,7 +545,7 @@ def update_rx(formulary_md_filename, invoice_filename, pricetable_filename, verb
 	print('\nProcessing Invoice...')
 	
 	recordlist = read_csv(str(invoice_path))
-	screen_output = screen_and_console_print(('Number of Invoice Entries: {}'.format(len(recordlist))), screen_output)
+	screen_output = screen_and_console_print(('Number of invoice entries: {}'.format(len(recordlist))), screen_output)
 
 	if verbose_debug:
 		print('Sample Invoice:')
@@ -553,14 +554,14 @@ def update_rx(formulary_md_filename, invoice_filename, pricetable_filename, verb
 	pricetable = read_pricetable(pricetable_path)
 	pricetable = compare_pricetable(pricetable, recordlist)
 
-	screen_output = screen_and_console_print('Number of Price Table Entries: {}'.format(len(pricetable)), screen_output)
+	screen_output = screen_and_console_print('Number of price table entries: {}'.format(len(pricetable)), screen_output)
 	print('Each Entry is a: {}'.format(type(next(iter(pricetable.values())))))
 
 	# Processing Formulary
 	print('\nProcessing Formulary Markdown...')
 	formularylist = read_md(str(formulary_md_path))
 	formularyparsed = parse_mddata(formularylist)
-	screen_output = screen_and_console_print('Number of Formulary Records: {}'.format(len(formularyparsed)), screen_output)
+	screen_output = screen_and_console_print('Number of EHHapp formulary medications: {}'.format(len(formularyparsed)), screen_output)
 	if verbose_debug:
 		print('Extracted Formulary Entries:')
 		print(formularyparsed[0])
@@ -572,9 +573,9 @@ def update_rx(formulary_md_filename, invoice_filename, pricetable_filename, verb
 	# Updating Formulary Against Invoice
 	print('\nFinding Matches...')
 	mcount, pricechanges, updatedformulary, softmatch, pricetable_unmatched_meds, fuzzymatches = formulary_update(formulary, pricetable)
-	screen_output = screen_and_console_print('Number of medication matches found: {}'.format(mcount), screen_output)
-	screen_output = screen_and_console_print('Number of partial matches made: {}'.format(softmatch), screen_output)
-	screen_output = screen_and_console_print('Number of price changes found: {}'.format(pricechanges), screen_output)
+	screen_output = screen_and_console_print('Number of partial medication matches: {}'.format(softmatch), screen_output)
+	screen_output = screen_and_console_print('Number of medication matches: {}'.format(mcount), screen_output)
+	screen_output = screen_and_console_print('Number of EHHapp formulary price changes: {}'.format(pricechanges), screen_output)
 	screen_output = screen_and_console_print('Number of invoice medications without match: {}'.format(len(pricetable_unmatched_meds)), screen_output)
 
 	if verbose_debug:

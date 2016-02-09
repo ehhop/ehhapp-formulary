@@ -42,19 +42,39 @@ label {
 	border-radius: 4px;
 	font-family: Menlo,Monaco,Consolas,"Courier New",monospace;
 }
-.btn-toolbar {
-	margin-left: 0px;
-}
-.btn-spaced {
-	margin-bottom:5;
-}
-.btn-group {
-	margin-left: 0px;
-	margin-right: 5px;
-}
-.btn {
-	margin-left: 0px;
-}
 #output-box-text {
 	margin: 0 0 0 0;
+}
+#donate {
+    margin:1px;
+    float:left;
+}
+#donate label {
+    float:left;
+    margin:1px;
+    background-color:#EFEFEF;
+    border-radius:4px;
+    border:1px solid #D0D0D0;
+    display: block;
+    position: relative;
+    overflow: hidden;
+}
+#donate label span {
+    text-align:center;
+    font-size: 12px;
+    font-family: inherit;
+    padding:8px 8px 8px 8px;
+    display:block;
+}
+#donate label input {
+    position:absolute;
+    top:-20px;
+}
+#donate input:checked + span {
+    background-color:#404040;
+    color:#F7F7F7;
+}
+#donate .blue {
+    background-color:#006dcc;
+    color:#F7F7F7;
 }

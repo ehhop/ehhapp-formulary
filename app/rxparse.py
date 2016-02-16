@@ -458,6 +458,7 @@ def formulary_update(formulary, pricetable, set_similarity_rating=100):
 					# formulary name is similar to pricetable name, and doses are same
 					else:
 						if dosepatt.search(invnamedose):
+							'''
 							fuzzymatches[invnamedose] = FuzzyMatch(
 								MD_NAMEDOSE = mdnamedose,\
 								MD_PRICE = mdcost,\
@@ -483,7 +484,7 @@ def formulary_update(formulary, pricetable, set_similarity_rating=100):
 									print("Formulary updated so price is now {}".format(record.PRICETABLE[k].COST))
 							elif user_input == 'n':
 								print('This medication price will not be changed.')
-							'''
+
 		if has_pricetable_match == False:
 			capture = invnamedose
 			pricetable_unmatched_meds.append(capture)
@@ -545,10 +546,15 @@ def update_rx(formulary_md_filename, invoice_filename, pricetable_filename, verb
 
 	formulary_md_filename_no_extension = formulary_md_filename.split('.', 1)[0]
 	pricetable_filename_no_extension = pricetable_filename.split('.', 1)[0]
+	
+	output_filename_list = []
 
-	formulary_updated_path = current_script_path+'/output/'+formulary_md_filename_no_extension+'_UPDATED.markdown'
+	formulary_updated_rm_path = current_script_path+'/output/'+formulary_md_filename_no_extension+'_UPDATED.markdown'
+	output_filename_list.append(formulary_md_filename_no_extension+'_UPDATED.markdown')
+	formulary_updated_tsv_path = current_script_path+'/output/'+formulary_md_filename_no_extension+'_UPDATED.tsv'
+	output_filename_list.append(formulary_md_filename_no_extension+'_UPDATED.tsv')
 	pricetable_updated_path = current_script_path+'/output/'+pricetable_filename_no_extension+'_UPDATED.tsv'
-	output_filename_list = [formulary_md_filename_no_extension+'_UPDATED.markdown', pricetable_filename_no_extension+'_UPDATED.tsv']
+	output_filename_list.append(pricetable_filename_no_extension+'_UPDATED.tsv')
 	
 	# Create container for webpage output
 	screen_output = []
@@ -598,9 +604,9 @@ def update_rx(formulary_md_filename, invoice_filename, pricetable_filename, verb
 		for i in range(0,4):
 			print('updated Formulary markdown: {}'.format(updatedformulary[i]._to_markdown()))
 	
-	to_Markdown(updatedformulary, formulary_updated_path)
-	to_TSV(updatedformulary, pricetable_updated_path)
-	write_pricetable(pricetable, pricetable_path)
+	to_Markdown(updatedformulary, formulary_updated_rm_path)
+	to_TSV(updatedformulary, formulary_updated_tsv_path)
+	write_pricetable(pricetable, pricetable_updated_path)
 	
 	# Test BLACKLISTED attribute
 	blacklisted = [d for d in updatedformulary if d.BLACKLISTED]

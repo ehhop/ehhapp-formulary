@@ -41,7 +41,9 @@ def process_file():
 	pricetable_unmatched_meds, output_filename_list, screen_output, fuzzymatches = update_rx(formulary, invoice, pricetable)
 
 	app.logger.debug(screen_output)
-	
+
+	'''screen_output = json.dumps(screen_output)'''
+
 	return render_template('selection.html', output_filename_list=output_filename_list, screen_output=screen_output, pricetable_unmatched_meds=pricetable_unmatched_meds, fuzzymatches=fuzzymatches)
 
 @app.route('/output/<filename>')
@@ -53,8 +55,8 @@ def result():
 	app.logger.debug("JSON received...")
 	app.logger.debug(request.json)
 	request_json = request.get_json()
-
-	return request_json_data
+	
+	return request_json
 	'''
 	output_filename_list = []
 	pricetable_unmatched_meds = []

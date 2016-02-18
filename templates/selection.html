@@ -58,6 +58,10 @@
 					request.onload = function() {
 						console.log('sent!')	
 						};
+						
+					var screen_output = {{ screen_output|safe }};
+					/*
+					var jsonObject = JSON.parse(outputs);
 					var my_cars= {};
 					alert('{{screen_output}}');
 					my_cars["cool"]="Mustang";
@@ -65,7 +69,9 @@
 					my_cars["big"]="SUV";
 					my_cars["screen_output"]={{screen_output}};
 					cars = JSON.stringify(my_cars);
-					alert(cars);
+					*/
+					alert(screen_output);
+					cars = JSON.stringify(screen_output);
 					request.send(cars);
 				}
 

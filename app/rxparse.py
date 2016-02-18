@@ -458,7 +458,6 @@ def formulary_update(formulary, pricetable, set_similarity_rating=100):
 					# formulary name is similar to pricetable name, and doses are same
 					else:
 						if dosepatt.search(invnamedose):
-							'''
 							fuzzymatches[invnamedose] = FuzzyMatch(
 								MD_NAMEDOSE = mdnamedose,\
 								MD_PRICE = mdcost,\
@@ -484,7 +483,7 @@ def formulary_update(formulary, pricetable, set_similarity_rating=100):
 									print("Formulary updated so price is now {}".format(record.PRICETABLE[k].COST))
 							elif user_input == 'n':
 								print('This medication price will not be changed.')
-
+							'''
 		if has_pricetable_match == False:
 			capture = invnamedose
 			pricetable_unmatched_meds.append(capture)

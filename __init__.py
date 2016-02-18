@@ -39,20 +39,28 @@ def process_file():
 	pricetable = str(upload_filename_list[2])
 
 	pricetable_unmatched_meds, output_filename_list, screen_output, fuzzymatches = update_rx(formulary, invoice, pricetable)
+
+	app.logger.debug(screen_output)
+	
 	return render_template('selection.html', output_filename_list=output_filename_list, screen_output=screen_output, pricetable_unmatched_meds=pricetable_unmatched_meds, fuzzymatches=fuzzymatches)
 
 @app.route('/output/<filename>')
 def output_file(filename):
-    return send_from_directory(app.config['OUTPUT_FOLDER'],filename)
+	return send_from_directory(app.config['OUTPUT_FOLDER'],filename)
 
-@app.route('/result', methods=['POST'])
+@app.route('/result', methods=['GET','POST'])
 def result():
-    screen_output = request.get_json(silent=True)
-    output_filename_list = []
-    pricetable_unmatched_meds = []
-    print('stored!')
-    return render_template('output.html', output_filename_list=output_filename_list, screen_output=screen_output, pricetable_unmatched_meds=pricetable_unmatched_meds)
+	app.logger.debug("JSON received...")
+	app.logger.debug(request.json)
+	request_json = request.get_json()
 
+	return request_json_data
+	'''
+	output_filename_list = []
+	pricetable_unmatched_meds = []
+	print('stored!')
+	return render_template('output.html', output_filename_list=output_filename_list, screen_output=screen_output, pricetable_unmatched_meds=pricetable_unmatched_meds)
+	'''
 if __name__ == '__main__':
 	port = int(os.environ.get('PORT', 5050))
 	app.run(

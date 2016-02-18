@@ -4,7 +4,6 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<link rel="stylesheet" href="/static/css/bootstrap.min.css">
 	<link rel="stylesheet" href="/static/css/custom.css">
-	<script src = "https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.js"></script>
 </head>
 
 <body>
@@ -29,11 +28,13 @@
 			pricetable_unmatched_meds
 			-->
 
+			<!--
 			<div class="form-group">
+
 				<p class="text-center">
 					<input id="singlebutton" name="singlebutton" class="btn btn-primary" type="submit" value="Submit" />
 				</p>
-				<button onclick="demoRequest()"class="btn btn-primary" id="submit-button" value="Submit">Submit</button>
+			-->
 				<script>
 				/*
 				function getHttpRequest() {
@@ -46,29 +47,34 @@
 				    return xmlhttp;
 				}*/
 				function demoRequest() {
-					console.log('Button pressed')
-		      /*var request = getHttpRequest();*/
 		      var request = new XMLHttpRequest();
+					/*
+					var redirectUrlText = window.location.href+"/result";
+					var redirectUrl = encodeURIComponent(redirectUrlText);
+					*/
+					request.open("POST",'http://0.0.0.0:5050/result');
 
-		      /*request.onreadystatechange=function() {
-		            if (request.readyState == 4 && request.status == 200) {
-		                  console.log("Response Received");
-		            }
-		      }*/
-		      var input = document.getElementById("my-input-id");
-					var inputData = encodeURIComponent(input.value);
-					var parentUrl = encodeURIComponent(window.location.href);
-					var redirectUrl = window.location.origin+"/result?ReturnUrl=" + parentUrl;
-
-		      request.open("POST",redirectUrl,true);
-		      request.setRequestHeader("Content-type","application/json");
-		      xhr.onload = function() {
-						console.log('Sent!')
+					request.setRequestHeader('Content-Type', 'application/json');
+					request.onload = function() {
+						console.log('sent!')	
 						};
-		      dataOutputs = JSON.stringify({{screen_output}}
-		      request.send("dataOutputs");
+					var my_cars= {};
+					alert('{{screen_output}}');
+					my_cars["cool"]="Mustang";
+					my_cars["family"]="Station Wagon";
+					my_cars["big"]="SUV";
+					my_cars["screen_output"]={{screen_output}};
+					cars = JSON.stringify(my_cars);
+					alert(cars);
+					request.send(cars);
+				}
+
+				function myFunction() {
+					alert('Thanks!');
 				}
 				</script>
+			<div class="text-center">
+				<button action="/result" class="btn btn-primary" onclick="demoRequest()" id="submit" value="Submit">Submit</button>
 			</div>
 		<!--</form>-->
 	</div>

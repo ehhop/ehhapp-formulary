@@ -50,9 +50,15 @@ def process_file():
 	#store output files list, screen output, and unmatched medications as cookies
 	#render selection.html page
 	resp = make_response(render_template('selection.html', output_filename_list=output_filename_list, screen_output=screen_output, pricetable_unmatched_meds=pricetable_unmatched_meds, fuzzymatches=fuzzymatches))
-	resp.set_cookie('output_filename_list', output_filename_list)
-	resp.set_cookie('screen_output', screen_output)
-	resp.set_cookie('pricetable_unmatched_meds', pricetable_unmatched_meds)
+
+	json_output_filename_list = json.dumps(output_filename_list)
+	json_screen_output = json.dumps(screen_output)
+	json_pricetable_unmatched_meds = json.dumps(pricetable_unmatched_meds)
+
+	resp.set_cookie('output_filename_list', json_output_filename_list)
+	resp.set_cookie('screen_output', json_screen_output)
+	resp.set_cookie('pricetable_unmatched_meds', json_pricetable_unmatched_meds)
+
 	return resp
 
 @app.route('/output/<filename>')
@@ -61,11 +67,22 @@ def output_file(filename):
 
 @app.route('/result', methods=['POST'])
 def result():
-	username = request.cookies.get('username')
-	app.logger.debug("Checking cookie...") #debugging
-	app.logger.debug(username) #debugging
+	json_output_filename_list = request.cookies.get('output_filename_list')
+	json_screen_output = request.cookies.get('screen_output')
+	json_pricetable_unmatched_meds = request.cookies.get('pricetable_unmatched_meds')
+
+	output_filename_list = json.loads(json_output_filename_list)
+	screen_output = json.loads(json_screen_output)
+	pricetable_unmatched_meds = json.loads(json_pricetable_unmatched_meds)
+
+	app.logger.debug("Checking cookies...") #debugging
+	'''
+	app.logger.debug(output_filename_list) #debugging
+	app.logger.debug(screen_output) #debugging
+	app.logger.debug(pricetable_unmatched_meds) #debugging
+	'''
 	
-	fuzzymatcheslist = request.form.getlist('check') 
+	fuzzymatcheslist = request.form.getlist('check')
 	app.logger.debug(fuzzymatcheslist) #debugging
 
 	return render_template('result.html')

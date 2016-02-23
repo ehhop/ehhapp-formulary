@@ -18,7 +18,7 @@
 				{% for k, v in fuzzymatches.items() %}
 				<div id="fuzzymatches">
 				    <label>
-				    	<input type="checkbox" name="matches" value="{{fuzzymatches[k]}}"><span>"{{v.MD_NAMEDOSE}}" is "{{v.INV_NAMEDOSE}}"</span>
+				    	<input type="checkbox" name="matches[]" value="{{v.INV_NAMEDOSE}}:{{v.MD_NAMEDOSE}}"><span>"{{v.INV_NAMEDOSE}}" is "{{v.MD_NAMEDOSE}}"</span>
 			    	</label>
 				</div>
 				{% endfor %}

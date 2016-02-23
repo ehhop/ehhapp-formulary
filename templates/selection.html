@@ -7,7 +7,7 @@
 </head>
 
 <body>
-	<div class="container">
+	<div class="container" id="g">
 		<div class="header">
 			<h3 class="text-muted">Select Matching Medications</h3>
 		</div>
@@ -16,8 +16,10 @@
 		<!--<form role="form" method="post" action="/output" enctype="multipart/form-data">-->
 			<div class="container data-container">
 				{% for k, v in fuzzymatches.items() %}
-				<div id="donate">
-				    <label><input type="checkbox" name="matches" value="{{fuzzymatches[k]}}"><span>"{{v.MD_NAMEDOSE}}" is "{{v.INV_NAMEDOSE}}"</span></label>
+				<div id="fuzzymatches">
+				    <label>
+				    	<input type="checkbox" name="matches" value="{{fuzzymatches[k]}}"><span>"{{v.MD_NAMEDOSE}}" is "{{v.INV_NAMEDOSE}}"</span>
+			    	</label>
 				</div>
 				{% endfor %}
 			</div>
@@ -47,38 +49,53 @@
 				    return xmlhttp;
 				}*/
 				function demoRequest() {
-		      var request = new XMLHttpRequest();
 					/*
-					var redirectUrlText = window.location.href+"/result";
-					var redirectUrl = encodeURIComponent(redirectUrlText);
-					*/
+					var output_filename_list = {{ output_filename_list|safe }};
+					var pricetable_unmatched_meds = {{ pricetable_unmatched_meds|safe }};
+					var screen_output = {{ screen_output|safe }};
+					$.ajax({
+						type: "POST",
+						url: "http://0.0.0.0:5050/result",
+						contentType: "application/x-www-form-urlencoded",
+						data: data
+						  crossDomain:true, 
+						success: function() { window.location.href = "http://0.0.0.0:5050/result"},
+						error: function(data) {console.log(data); },
+						dataType: 'json',
+						beforeSend: function (xhr) {
+						            xhr.setRequestHeader("Access-Control-Allow-Origin", "*");
+						        },
+						        headers: {
+						            'Access-Control-Allow-Origin': '*'
+						        }
+						});*/
+					
+		      var request = new XMLHttpRequest();
+
+					callback(window.location="http://0.0.0.0:5050/result");
 					request.open("POST",'http://0.0.0.0:5050/result');
 
 					request.setRequestHeader('Content-Type', 'application/json');
 					request.onload = function() {
-						console.log('sent!')	
+						console.log('sent!');
+						$(this).html('<p> Your article was successfully added!</p>');
 						};
-						
+
+					var output_filename_list = {{ output_filename_list|safe }};
+					var pricetable_unmatched_meds = {{ pricetable_unmatched_meds|safe }};
 					var screen_output = {{ screen_output|safe }};
-					/*
-					var jsonObject = JSON.parse(outputs);
-					var my_cars= {};
-					alert('{{screen_output}}');
-					my_cars["cool"]="Mustang";
-					my_cars["family"]="Station Wagon";
-					my_cars["big"]="SUV";
-					my_cars["screen_output"]={{screen_output}};
-					cars = JSON.stringify(my_cars);
-					*/
-					alert(screen_output);
-					cars = JSON.stringify(screen_output);
-					request.send(cars);
+
+					var data_to_flask= {};
+					data_to_flask["is_fuzzy_match_selected"]=true;
+					data_to_flask["output_filename_list"]=output_filename_list;
+					data_to_flask["pricetable_unmatched_meds"]=pricetable_unmatched_meds;
+					data_to_flask["screen_output"]=screen_output;
+					data = JSON.stringify(data_to_flask);
+
+					request.send(data);
 				}
 
-				function myFunction() {
-					alert('Thanks!');
-				}
-				</script>
+			</script>
 			<div class="text-center">
 				<button action="/result" class="btn btn-primary" onclick="demoRequest()" id="submit" value="Submit">Submit</button>
 			</div>

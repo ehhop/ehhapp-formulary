@@ -46,11 +46,11 @@ label {
 #output-box-text {
 	margin: 0 0 0 0;
 }
-#donate {
+#fuzzymatches {
     margin:1px;
     float:left;
 }
-#donate label {
+#fuzzymatches label {
     float:left;
     margin:1px;
     background-color:#EFEFEF;
@@ -60,18 +60,18 @@ label {
     position: relative;
     overflow: hidden;
 }
-#donate label span {
+#fuzzymatches label span {
     text-align:center;
     font-size: 12px;
     font-family: inherit;
     padding:8px 8px 8px 8px;
     display:block;
 }
-#donate label input {
+#fuzzymatches label input {
     position:absolute;
     top:-20px;
 }
-#donate input:checked + span {
+#fuzzymatches input:checked + span {
     background-color:#404040;
     color:#F7F7F7;
 }

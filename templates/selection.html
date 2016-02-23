@@ -13,7 +13,7 @@
 		</div>
 		<hr/> <!--border-->
 
-		<!--<form role="form" method="post" action="/output" enctype="multipart/form-data">-->
+		<form role="form" method="post" action="/result" enctype="multipart/form-data">
 			<div class="container data-container">
 				{% for k, v in fuzzymatches.items() %}
 				<div id="fuzzymatches">
@@ -24,19 +24,11 @@
 				{% endfor %}
 			</div>
 			<br>
-
-			<!--
-			screen_output
-			pricetable_unmatched_meds
-			-->
-
-			<!--
-			<div class="form-group">
-
-				<p class="text-center">
-					<input id="singlebutton" name="singlebutton" class="btn btn-primary" type="submit" value="Submit" />
-				</p>
-			-->
+			
+			<p class="text-center">
+				<input id="singlebutton" name="singlebutton" class="btn btn-primary" type="submit" value="Submit" />
+			</p>
+				<!--
 				<script>
 				/*
 				function getHttpRequest() {
@@ -99,7 +91,8 @@
 			<div class="text-center">
 				<button action="/result" class="btn btn-primary" onclick="demoRequest()" id="submit" value="Submit">Submit</button>
 			</div>
-		<!--</form>-->
+			-->
+		</form>
 	</div>
 </body>
 </html>

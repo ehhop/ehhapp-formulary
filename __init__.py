@@ -1,6 +1,6 @@
 from __future__ import print_function
-import os
-from flask import Flask, render_template, request, redirect, url_for, send_from_directory
+import os, json
+from flask import Flask, render_template, request, redirect, url_for, send_from_directory, make_response
 from werkzeug import secure_filename
 from app.rxparse import update_rx
 
@@ -19,50 +19,60 @@ def allowed_file(filename):
 
 @app.route('/')
 def index():
-	error_prompt = ''
+	error_prompt = '' #create filler for error prompt div
 	return render_template('index.html', error_prompt=error_prompt)
 
 @app.route('/selection', methods=['POST'])
 def process_file():
+
+	#check for missing files and save uploaded file paths
 	uploaded_files = request.files.getlist("file")
 	upload_filename_list = []
+
 	for file in uploaded_files:
-		if file.filename == '':
+
+		if file.filename == '':  #return error if there are missing files
 			error_prompt = 'Please check that all files have been selected for upload'
 			return render_template('index.html', error_prompt=error_prompt)
+
 		if file and allowed_file(file.filename):
 			filename = secure_filename(file.filename)
 			file.save(os.path.join(app.config['UPLOAD_FOLDER'],filename))
 			upload_filename_list.append(file.filename) # old: currenly not tracking upload files
+
 	formulary = str(upload_filename_list[0])
 	invoice = str(upload_filename_list[1])
 	pricetable = str(upload_filename_list[2])
 
+	#run update function for pricetable and formulary and capture fuzzy matches
 	pricetable_unmatched_meds, output_filename_list, screen_output, fuzzymatches = update_rx(formulary, invoice, pricetable)
 
-	app.logger.debug(screen_output)
-
-	'''screen_output = json.dumps(screen_output)'''
-
-	return render_template('selection.html', output_filename_list=output_filename_list, screen_output=screen_output, pricetable_unmatched_meds=pricetable_unmatched_meds, fuzzymatches=fuzzymatches)
+	#store output files list, screen output, and unmatched medications as cookies
+	#render selection.html page
+	resp = make_response(render_template('selection.html', output_filename_list=output_filename_list, screen_output=screen_output, pricetable_unmatched_meds=pricetable_unmatched_meds, fuzzymatches=fuzzymatches))
+	resp.set_cookie('output_filename_list', output_filename_list)
+	resp.set_cookie('screen_output', screen_output)
+	resp.set_cookie('pricetable_unmatched_meds', pricetable_unmatched_meds)
+	return resp
 
 @app.route('/output/<filename>')
 def output_file(filename):
 	return send_from_directory(app.config['OUTPUT_FOLDER'],filename)
 
-@app.route('/result', methods=['GET','POST'])
+@app.route('/result', methods=['POST'])
 def result():
-	app.logger.debug("JSON received...")
-	app.logger.debug(request.json)
-	request_json = request.get_json()
+	username = request.cookies.get('username')
+	app.logger.debug("Checking cookie...") #debugging
+	app.logger.debug(username) #debugging
 	
-	return request_json
+	fuzzymatcheslist = request.form.getlist('check') 
+	app.logger.debug(fuzzymatcheslist) #debugging
+
+	return render_template('result.html')
 	'''
-	output_filename_list = []
-	pricetable_unmatched_meds = []
-	print('stored!')
-	return render_template('output.html', output_filename_list=output_filename_list, screen_output=screen_output, pricetable_unmatched_meds=pricetable_unmatched_meds)
+	return render_template('result.html', output_filename_list=output_filename_list, screen_output=screen_output, pricetable_unmatched_meds=pricetable_unmatched_meds)
 	'''
+
 if __name__ == '__main__':
 	port = int(os.environ.get('PORT', 5050))
 	app.run(

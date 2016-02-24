@@ -15,7 +15,7 @@ import os
 # Classes and Functions for reading and parsing invoices
 InvRec = namedtuple('InvoiceRecord', ['NAMEDOSE', 'NAME', 'DOSE', 'COST', 'CATEGORY', 'ITEMNUM',\
 		'REQDATE'])
-FuzzyMatch = namedtuple('FuzzyMatch', ['MD_NAMEDOSE', 'MD_PRICE', 'INV_NAMEDOSE', 'INV_PRICE'])
+FuzzyMatch = namedtuple('FuzzyMatch', ['MD_NAMEDOSE', 'MD_PRICE', 'INV_NAMEDOSE', 'INV_PRICE', 'INV_ITEMNUM'])
 
 def read_csv(filename):
 	"""Read and filter a csv to create a list of drug and price records.
@@ -388,7 +388,7 @@ def price_disc(mdcost, invcost):
 		new_price = False
 	return new_price
 
-def formulary_update(formulary, pricetable, set_similarity_rating=100):
+def formulary_update_from_pricetable(formulary, pricetable, set_similarity_rating=100):
 	"""Update drugs in formulary with prices from invoice.
 	"""
 	# Keeps track of soft matches
@@ -439,11 +439,10 @@ def formulary_update(formulary, pricetable, set_similarity_rating=100):
 					if dosepatt.search(invnamedose):
 						softmatch = True
 						smatchcount += 1
+						has_pricetable_match = True
 
 					# Is match formulary name is subset of pricetable name and doses are same
 					if match_string(mdname, invnamedose):
-						
-						has_pricetable_match = True
 
 						if dosepatt.search(invnamedose):
 							mcount += 1
@@ -462,7 +461,8 @@ def formulary_update(formulary, pricetable, set_similarity_rating=100):
 								MD_NAMEDOSE = mdnamedose,\
 								MD_PRICE = mdcost,\
 								INV_NAMEDOSE = invnamedose,\
-								INV_PRICE = invcost)
+								INV_PRICE = invcost,\
+								INV_ITEMNUM = itemnum)
 							'''
 							print('\nFound a poor match...')
 							print('Formulary name and dose is: '+str(mdname)+' '+ str(mddose))
@@ -489,6 +489,70 @@ def formulary_update(formulary, pricetable, set_similarity_rating=100):
 			pricetable_unmatched_meds.append(capture)
 
 	return mcount, pricechanges, formulary, smatchcount, pricetable_unmatched_meds, fuzzymatches
+
+def formulary_update_from_usermatches(formulary, usermatches, pricetable_unmatched_meds):
+	"""Update drugs in formulary with prices from user.
+	"""
+	# Keeps track of the number of matches
+	newmcount = 0
+
+	# Keeps track of the number of price changes
+	newpricechanges = 0
+
+	# Keeps track of pricetable medications without a match in the pricetable
+	new_pricetable_unmatched_meds = []
+
+	# Add fuzzy matches info to a dictionary
+	matches = {}
+	for line in usermatches:
+
+		# Divide each line into items deliminated by ":"
+		item = line.split(':')
+
+		# Instantiate namedtuple from using values returned by list indices
+		entry = FuzzyMatch(
+			MD_NAMEDOSE = item[0],\
+			MD_PRICE = item[1],\
+			INV_NAMEDOSE = item[2],\
+			INV_PRICE = item[3],\
+			INV_ITEMNUM = item[4]
+			)
+
+		# Use markdown formulary NAMEDOSE field as the key 'k' for our dictionary of InvRec objects
+		k = entry.NAMEDOSE
+
+		# All keys will be stored immediately with their corresponding values.
+		matches[k] = entry
+
+	# Loop through each FormularyRecord
+	for record in formulary:
+		# Set the PRICETABLE attribute
+		record._set_PRICETABLE()
+
+		# Loop through the fuzzy matches
+		for k, v in matches.items():
+			md_namedose = k.lower()
+			inv_namedose = v.INV_NAMEDOSE
+			inv_price = v.INV_PRICE
+			inv_itemnum = v.INV_ITEMNUM
+
+			# Find formulary medication with same namedose as fuzzy match
+			md_medication = record.PRICETABLE[MD_NAMEDOSE]
+			
+			newmcount += 1
+
+			# Update formulary medication price if there is price difference
+			if md_medication.COST != inv_price
+				newpricechanges += 1
+				record.PRICETABLE[k] = v._replace(COST = inv_price, ITEMNUM = inv_itemnum)
+				print("New price found for {} a.k.a. {}\nFormulary price: {}\nInvoice price: {}".format(invnamedose, k, mdcost, invcost))
+				print("Formulary updated so price is now {}".format(record.PRICETABLE[k].COST))
+
+		if has_pricetable_match == False:
+			capture = invnamedose
+			pricetable_unmatched_meds.append(capture)
+
+	return newmcount, newpricechanges, formulary, pricetable_unmatched_meds
 
 """
 ### WORK-IN-PROGRESS
@@ -548,9 +612,9 @@ def update_rx(formulary_md_filename, invoice_filename, pricetable_filename, verb
 	
 	output_filename_list = []
 
-	formulary_updated_rm_path = current_script_path+'/output/'+formulary_md_filename_no_extension+'_UPDATED.markdown'
+	formulary_update_from_pricetabled_rm_path = current_script_path+'/output/'+formulary_md_filename_no_extension+'_UPDATED.markdown'
 	output_filename_list.append(formulary_md_filename_no_extension+'_UPDATED.markdown')
-	formulary_updated_tsv_path = current_script_path+'/output/'+formulary_md_filename_no_extension+'_UPDATED.tsv'
+	formulary_update_from_pricetabled_tsv_path = current_script_path+'/output/'+formulary_md_filename_no_extension+'_UPDATED.tsv'
 	output_filename_list.append(formulary_md_filename_no_extension+'_UPDATED.tsv')
 	pricetable_updated_path = current_script_path+'/output/'+pricetable_filename_no_extension+'_UPDATED.tsv'
 	output_filename_list.append(pricetable_filename_no_extension+'_UPDATED.tsv')
@@ -589,7 +653,7 @@ def update_rx(formulary_md_filename, invoice_filename, pricetable_filename, verb
 	
 	# Updating Formulary Against Invoice
 	print('\nFinding Matches...')
-	mcount, pricechanges, updatedformulary, softmatch, pricetable_unmatched_meds, fuzzymatches = formulary_update(formulary, pricetable)
+	mcount, pricechanges, updatedformulary, softmatch, pricetable_unmatched_meds, fuzzymatches = formulary_update_from_pricetable(formulary, pricetable)
 	screen_output = screen_and_console_print('Number of partial medication matches: {}'.format(softmatch), screen_output)
 	screen_output = screen_and_console_print('Number of medication matches: {}'.format(mcount), screen_output)
 	screen_output = screen_and_console_print('Number of EHHapp formulary price changes: {}'.format(pricechanges), screen_output)
@@ -603,8 +667,8 @@ def update_rx(formulary_md_filename, invoice_filename, pricetable_filename, verb
 		for i in range(0,4):
 			print('updated Formulary markdown: {}'.format(updatedformulary[i]._to_markdown()))
 	
-	to_Markdown(updatedformulary, formulary_updated_rm_path)
-	to_TSV(updatedformulary, formulary_updated_tsv_path)
+	to_Markdown(updatedformulary, formulary_update_from_pricetabled_rm_path)
+	to_TSV(updatedformulary, formulary_update_from_pricetabled_tsv_path)
 	write_pricetable(pricetable, pricetable_updated_path)
 	
 	# Test BLACKLISTED attribute

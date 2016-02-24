@@ -18,7 +18,7 @@
 				{% for k, v in fuzzymatches.items() %}
 				<div id="fuzzymatches">
 				    <label>
-				    	<input type="checkbox" name="matches[]" value="{{v.INV_NAMEDOSE}}:{{v.MD_NAMEDOSE}}"><span>"{{v.INV_NAMEDOSE}}" is "{{v.MD_NAMEDOSE}}"</span>
+				    	<input type="checkbox" name="usermatches" value="{{v.MD_NAMEDOSE}}:{{v.MD_PRICE}}:{{v.INV_NAMEDOSE}}:{{v.INV_PRICE}}:{{v.INV_ITEMNUM}}"><span>"{{v.INV_NAMEDOSE}}" is "{{v.MD_NAMEDOSE}}"</span>
 			    	</label>
 				</div>
 				{% endfor %}
@@ -28,70 +28,6 @@
 			<p class="text-center">
 				<input id="singlebutton" name="singlebutton" class="btn btn-primary" type="submit" value="Submit" />
 			</p>
-				<!--
-				<script>
-				/*
-				function getHttpRequest() {
-				    var xmlhttp;
-				    if (window.XMLHttpRequest) {// code for IE7+, Firefox, Chrome, Opera, Safari
-				        xmlhttp=new XMLHttpRequest();
-				    } else {// code for IE6, IE5
-				        xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");
-				    }
-				    return xmlhttp;
-				}*/
-				function demoRequest() {
-					/*
-					var output_filename_list = {{ output_filename_list|safe }};
-					var pricetable_unmatched_meds = {{ pricetable_unmatched_meds|safe }};
-					var screen_output = {{ screen_output|safe }};
-					$.ajax({
-						type: "POST",
-						url: "http://0.0.0.0:5050/result",
-						contentType: "application/x-www-form-urlencoded",
-						data: data
-						  crossDomain:true, 
-						success: function() { window.location.href = "http://0.0.0.0:5050/result"},
-						error: function(data) {console.log(data); },
-						dataType: 'json',
-						beforeSend: function (xhr) {
-						            xhr.setRequestHeader("Access-Control-Allow-Origin", "*");
-						        },
-						        headers: {
-						            'Access-Control-Allow-Origin': '*'
-						        }
-						});*/
-					
-		      var request = new XMLHttpRequest();
-
-					callback(window.location="http://0.0.0.0:5050/result");
-					request.open("POST",'http://0.0.0.0:5050/result');
-
-					request.setRequestHeader('Content-Type', 'application/json');
-					request.onload = function() {
-						console.log('sent!');
-						$(this).html('<p> Your article was successfully added!</p>');
-						};
-
-					var output_filename_list = {{ output_filename_list|safe }};
-					var pricetable_unmatched_meds = {{ pricetable_unmatched_meds|safe }};
-					var screen_output = {{ screen_output|safe }};
-
-					var data_to_flask= {};
-					data_to_flask["is_fuzzy_match_selected"]=true;
-					data_to_flask["output_filename_list"]=output_filename_list;
-					data_to_flask["pricetable_unmatched_meds"]=pricetable_unmatched_meds;
-					data_to_flask["screen_output"]=screen_output;
-					data = JSON.stringify(data_to_flask);
-
-					request.send(data);
-				}
-
-			</script>
-			<div class="text-center">
-				<button action="/result" class="btn btn-primary" onclick="demoRequest()" id="submit" value="Submit">Submit</button>
-			</div>
-			-->
 		</form>
 	</div>
 </body>

@@ -75,15 +75,19 @@ def result():
 	screen_output = json.loads(json_screen_output)
 	pricetable_unmatched_meds = json.loads(json_pricetable_unmatched_meds)
 
-	app.logger.debug("Checking cookies...") #debugging
 	'''
+	app.logger.debug("Checking cookies...") #debugging
 	app.logger.debug(output_filename_list) #debugging
 	app.logger.debug(screen_output) #debugging
 	app.logger.debug(pricetable_unmatched_meds) #debugging
 	'''
-	
-	fuzzymatcheslist = request.form.getlist('check')
-	app.logger.debug(fuzzymatcheslist) #debugging
+
+	user_matches = request.form.getlist('usermatches')
+	app.logger.debug(matches) #debugging
+
+	#function for adding user matches
+	#function for updating summary information
+	#function for processing file outputs
 
 	return render_template('result.html')
 	'''

@@ -11,7 +11,7 @@ ALLOWED_EXTENSIONS = set(['txt','xls','xlsx','csv','tsv','md', 'markdown'])
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['OUTPUT_FOLDER'] = OUTPUT_FOLDER
-app.config['MAX_CONTENT_LENGTH'] = 100*1024*1024 #set max upload file size to 100mb
+app.config['MAX_CONTENT_LENGTH'] = 100*1024*1024 # Set max upload file size to 100mb
 
 def allowed_file(filename):
 	return '.' in filename and \
@@ -19,36 +19,39 @@ def allowed_file(filename):
 
 @app.route('/')
 def index():
-	error_prompt = '' #create filler for error prompt div
+	error_prompt = '' # Create filler for error prompt div
 	return render_template('index.html', error_prompt=error_prompt)
 
 @app.route('/selection', methods=['POST'])
 def process_file():
-
-	#check for missing files and save uploaded file paths
+	# Check for missing files and save uploaded file paths
 	uploaded_files = request.files.getlist("file")
-	upload_filename_list = []
+	upload_filepath_list = []
 
 	for file in uploaded_files:
 
-		if file.filename == '':  #return error if there are missing files
+		# If file is missing, return error and remain on start page
+		if file.filename == '':  
 			error_prompt = 'Please check that all files have been selected for upload'
 			return render_template('index.html', error_prompt=error_prompt)
-
+		# Save files and create list of file paths
 		if file and allowed_file(file.filename):
 			filename = secure_filename(file.filename)
 			file.save(os.path.join(app.config['UPLOAD_FOLDER'],filename))
-			upload_filename_list.append(file.filename) # old: currenly not tracking upload files
+			upload_filepath_list.append(os.path.join(app.config['UPLOAD_FOLDER'],filename))
 
-	formulary = str(upload_filename_list[0])
-	invoice = str(upload_filename_list[1])
-	pricetable = str(upload_filename_list[2])
+	formulary = str(upload_filepath_list[0])
+	invoice = str(upload_filepath_list[1])
+	pricetable = str(upload_filepath_list[2])
 
-	#run update function for pricetable and formulary and capture fuzzy matches
+	# Run update function for pricetable and formulary and capture fuzzy matches
+	'''
 	pricetable_unmatched_meds, output_filename_list, screen_output, fuzzymatches = update_rx(formulary, invoice, pricetable)
+	'''
+	pricetable_updated_path, screen_output, output_filename_list = process_pricetable(invoice_path, pricetable_path, verbose_debug=False)
 
-	#store output files list, screen output, and unmatched medications as cookies
-	#render selection.html page
+	# Store output files list, screen output, and unmatched medications as cookies
+	# Render selection.html page
 	resp = make_response(render_template('selection.html', output_filename_list=output_filename_list, screen_output=screen_output, pricetable_unmatched_meds=pricetable_unmatched_meds, fuzzymatches=fuzzymatches))
 
 	json_output_filename_list = json.dumps(output_filename_list)

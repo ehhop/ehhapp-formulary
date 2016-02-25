@@ -3,7 +3,7 @@ import csv
 from statistics import mean
 from fuzzywuzzy import fuzz
 from datetime import datetime
-from collections import namedtuple
+from collections import namedtuple OrderedDict
 import os
 
 
@@ -558,7 +558,7 @@ def formulary_update_from_usermatches(formulary, usermatches, pricetable_unmatch
 ### WORK-IN-PROGRESS
 These functions control output to Markdown
 """
-def to_Markdown(formulary, updated_markdown_filename):
+def formulary_to_Markdown(formulary, updated_markdown_filename):
 	'''Outputs updated Formulary database to Markdown.
 	'''
 	output = []
@@ -576,7 +576,7 @@ def to_Markdown(formulary, updated_markdown_filename):
 	with open(updated_markdown_filename, "w") as f:
 		f.write('\n'.join(output))
 
-def to_TSV(formulary, updated_pricetable_path):
+def formulary_to_TSV(formulary, updated_pricetable_path):
 	'''Outputs updated Formulary database to CSV
 	'''
 	output = []
@@ -595,53 +595,56 @@ def screen_and_console_print(output, screen_output):
 	screen_output.append(output)
 	return screen_output
 
-def update_rx(formulary_md_filename, invoice_filename, pricetable_filename, verbose_debug=False):
+def process_pricetable(invoice_path, pricetable_path, verbose_debug=False):
 	'''Main function of script. Creates updated formulary markdown and pricetable.
 
 	Data files need to be place in a subfolder named "input".
 	Input varibles are filenames without the file path prefix.
 	Verbose output displays subsets of data during each step of processing.
 	'''
-	current_script_path = os.path.realpath(__file__)[:-len('/rxparse.py')]
-	formulary_md_path = current_script_path + '/input/' + formulary_md_filename
-	invoice_path = current_script_path + '/input/' + invoice_filename
-	pricetable_path = current_script_path + '/input/' + pricetable_filename
-
-	formulary_md_filename_no_extension = formulary_md_filename.split('.', 1)[0]
-	pricetable_filename_no_extension = pricetable_filename.split('.', 1)[0]
-	
+	# Process fileio
 	output_filename_list = []
 
-	formulary_update_from_pricetabled_rm_path = current_script_path+'/output/'+formulary_md_filename_no_extension+'_UPDATED.markdown'
-	output_filename_list.append(formulary_md_filename_no_extension+'_UPDATED.markdown')
-	formulary_update_from_pricetabled_tsv_path = current_script_path+'/output/'+formulary_md_filename_no_extension+'_UPDATED.tsv'
-	output_filename_list.append(formulary_md_filename_no_extension+'_UPDATED.tsv')
+	pricetable_filename = pricetable_path.split('/')[-1] #remove directory from filename
+	pricetable_filename_no_extension = pricetable_filename.split('/', 1)[0]
+
+	current_script_path = os.path.realpath(__file__)[:-len('/rxparse.py')]
 	pricetable_updated_path = current_script_path+'/output/'+pricetable_filename_no_extension+'_UPDATED.tsv'
-	output_filename_list.append(pricetable_filename_no_extension+'_UPDATED.tsv')
 	
+	output_filename_list.append(pricetable_filename_no_extension+'_UPDATED.tsv')
+
 	# Create container for webpage output
-	screen_output = []
+	screen_output = OrderedDict()
 
 	# Processing Invoice
 	print('\nProcessing Invoice...')
 	
 	recordlist = read_csv(str(invoice_path))
-	screen_output = screen_and_console_print(('Number of invoice entries: {}'.format(len(recordlist))), screen_output)
+	print('Number of invoice entries: {}'.format(len(recordlist))
+	screen_output.update({'Number of invoice entries':len(recordlist)})
 
 	if verbose_debug:
 		print('Sample Invoice:')
 		print(recordlist[0])
 
 	pricetable = read_pricetable(pricetable_path)
-	pricetable = compare_pricetable(pricetable, recordlist)
+	pricetable_updated = compare_pricetable(pricetable, recordlist)
 
-	screen_output = screen_and_console_print('Number of price table entries: {}'.format(len(pricetable)), screen_output)
+	print('Number of price table entries: {}'.format(len(pricetable))
+	screen_output.update({'Number of price table entries':len(pricetable)})
 	print('Each Entry is a: {}'.format(type(next(iter(pricetable.values())))))
 
-	# Processing Formulary
+	return(pricetable_updated_path, screen_output, output_filename_list)
+
+def process_formulary(pricetable_updated_path, formulary_md_path, output_filename_list):
+	# Load updated pricetable
+	pricetable = read_pricetable(pricetable_updated_path)
+
+	# Processing formulary
 	print('\nProcessing Formulary Markdown...')
 	formularylist = read_md(str(formulary_md_path))
 	formularyparsed = parse_mddata(formularylist)
+
 	screen_output = screen_and_console_print('Number of EHHapp formulary medications: {}'.format(len(formularyparsed)), screen_output)
 	if verbose_debug:
 		print('Extracted Formulary Entries:')
@@ -667,8 +670,8 @@ def update_rx(formulary_md_filename, invoice_filename, pricetable_filename, verb
 		for i in range(0,4):
 			print('updated Formulary markdown: {}'.format(updatedformulary[i]._to_markdown()))
 	
-	to_Markdown(updatedformulary, formulary_update_from_pricetabled_rm_path)
-	to_TSV(updatedformulary, formulary_update_from_pricetabled_tsv_path)
+	formulary_to_Markdown(updatedformulary, formulary_update_from_pricetabled_rm_path)
+	formulary_to_TSV(updatedformulary, formulary_update_from_pricetabled_tsv_path)
 	write_pricetable(pricetable, pricetable_updated_path)
 	
 	# Test BLACKLISTED attribute

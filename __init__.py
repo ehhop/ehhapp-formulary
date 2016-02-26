@@ -59,6 +59,7 @@ def process_file():
 	json_pricetable_unmatched_meds = json.dumps(pricetable_unmatched_meds)
 	json_screen_output = json.dumps(screen_output)
 
+	resp.set_cookie('formulary_md_path', formulary_md_path)
 	resp.set_cookie('output_filename_list', json_output_filename_list)
 	resp.set_cookie('screen_output', json_screen_output)
 	resp.set_cookie('pricetable_unmatched_meds', json_pricetable_unmatched_meds)
@@ -74,6 +75,7 @@ def result():
 	json_output_filename_list = request.cookies.get('output_filename_list')
 	json_screen_output = request.cookies.get('screen_output')
 	json_pricetable_unmatched_meds = request.cookies.get('pricetable_unmatched_meds')
+	formulary_md_path = request.cookies.get('formulary_md_path')
 
 	output_filename_list = json.loads(json_output_filename_list)
 	pricetable_unmatched_meds = json.loads(json_pricetable_unmatched_meds)
@@ -89,6 +91,7 @@ def result():
 	user_matches = request.form.getlist('usermatches')
 	app.logger.debug(user_matches) #debugging
 	
+	pricetable_unmatched_meds, screen_output = process_usermatches(user_matches, formulary_md_path, pricetable_unmatched_meds, screen_output)
 	#function for adding user matches
 	#function for updating summary information
 	#function for processing file outputs

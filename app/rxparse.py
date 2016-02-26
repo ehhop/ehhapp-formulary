@@ -638,17 +638,6 @@ def process_pricetable(invoice_path, pricetable_path, verbose_debug=False):
 	return(pricetable_updated_path, screen_output, output_filename_list)
 
 def process_formulary(pricetable_updated_path, formulary_md_path, output_filename_list, screen_output, verbose_debug=False):
-	# Process FileIO
-	formulary_md_filename = formulary_md_path.split('/')[-1] #remove directory from filename
-	formulary_md_filename_no_extension = formulary_md_filename.split('.', 1)[0]
-
-	current_script_path = os.path.realpath(__file__)[:-len('/rxparse.py')]
-
-	formulary_update_rm_path = current_script_path+'/output/'+formulary_md_filename_no_extension+'_UPDATED.markdown'
-	output_filename_list.append(formulary_md_filename_no_extension+'_UPDATED.markdown')
-	formulary_update_tsv_path = current_script_path+'/output/'+formulary_md_filename_no_extension+'_UPDATED.tsv'
-	output_filename_list.append(formulary_md_filename_no_extension+'_UPDATED.tsv')
-
 	# Load updated pricetable
 	pricetable = read_pricetable(pricetable_updated_path)
 
@@ -692,9 +681,6 @@ def process_formulary(pricetable_updated_path, formulary_md_path, output_filenam
 		for i in range(0,4):
 			print('updated Formulary markdown: {}'.format(updatedformulary[i]._to_markdown()))
 	
-	formulary_to_Markdown(updatedformulary, formulary_update_rm_path)
-	formulary_to_TSV(updatedformulary, formulary_update_tsv_path)
-
 	# Test BLACKLISTED attribute
 	blacklisted = [d for d in updatedformulary if d.BLACKLISTED]
 
@@ -702,6 +688,24 @@ def process_formulary(pricetable_updated_path, formulary_md_path, output_filenam
 	screen_output.append(['Number of blacklisted drugs',len(blacklisted)])
 
 	return pricetable_unmatched_meds, output_filename_list, screen_output, fuzzymatches
+
+def process_usermatches(user_matches, formulary_md_path, pricetable_unmatched_meds, screen_output):
+	# Process FileIO
+	formulary_md_filename = formulary_md_path.split('/')[-1] #remove directory from filename
+	formulary_md_filename_no_extension = formulary_md_filename.split('.', 1)[0]
+
+	current_script_path = os.path.realpath(__file__)[:-len('/rxparse.py')]
+
+	formulary_update_rm_path = current_script_path+'/output/'+formulary_md_filename_no_extension+'_UPDATED.markdown'
+	output_filename_list.append(formulary_md_filename_no_extension+'_UPDATED.markdown')
+	formulary_update_tsv_path = current_script_path+'/output/'+formulary_md_filename_no_extension+'_UPDATED.tsv'
+	output_filename_list.append(formulary_md_filename_no_extension+'_UPDATED.tsv')
+
+	#TODO Add user matches to formulary
+
+	# Output updates formulary as markdown and tsv
+	formulary_to_Markdown(updatedformulary, formulary_update_rm_path)
+	formulary_to_TSV(updatedformulary, formulary_update_tsv_path)
 
 if __name__ == "__main__":
 	from sys import argv

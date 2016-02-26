@@ -553,12 +553,12 @@ def formulary_update_from_usermatches(formulary, usermatches, pricetable_unmatch
 					if mdcost != inv_price:
 						newpricechanges += 1
 						record.PRICETABLE[k] = v._replace(COST = inv_price, ITEMNUM = inv_itemnum)
-						print("New price found for {} a.k.a. {}\nFormulary price: {}\nInvoice price: {}".format(invnamedose, k, mdcost, invcost))
+						print("New price found for {} a.k.a. {}\nFormulary price: {}\nInvoice price: {}".format(inv_namedose, k, mdcost, inv_price))
 						print("Formulary updated so price is now {}".format(record.PRICETABLE[k].COST))
 
 			# Remove user matched medcations from the list of unmatched invoice mediations
-			pricetable_unmatched_meds.remove(capture)
-			
+			pricetable_unmatched_meds.discard(md_namedose)
+
 	return newmcount, newpricechanges, formulary, pricetable_unmatched_meds
 
 """
@@ -678,7 +678,7 @@ def process_formulary(pricetable_updated_path, formulary_md_path, output_filenam
 	screen_output.append(['Number of EHHapp formulary price changes',pricechanges])
 
 	print('Number of invoice medications without match: {}'.format(len(pricetable_unmatched_meds)))
-	screen_output.append(['Number of invoice medications without match',pricetable_unmatched_meds])
+	screen_output.append(['Number of invoice medications without match',len(pricetable_unmatched_meds)])
 
 	if verbose_debug:
 		print('Number of invoice medications without match')
@@ -687,7 +687,7 @@ def process_formulary(pricetable_updated_path, formulary_md_path, output_filenam
 
 		for i in range(0,4):
 			print('updated Formulary markdown: {}'.format(updatedformulary[i]._to_markdown()))
-	
+
 	# Test BLACKLISTED attribute
 	blacklisted = [d for d in updatedformulary if d.BLACKLISTED]
 
@@ -720,19 +720,8 @@ def process_usermatches(usermatches, formulary_md_path, pricetable_unmatched_med
 	formulary_to_Markdown(updatedformulary, formulary_update_rm_path)
 	formulary_to_TSV(updatedformulary, formulary_update_tsv_path)
 
-	print('Number of partial medication matches: {}'.format(softmatch))
-	screen_output.append(['Number of partial medication matches',softmatch])
-
-	print('Number of medication matches: {}'.format(mcount))
-	screen_output.append(['Number of medication matches',mcount])
-
-	print('Number of EHHapp formulary price changes: {}'.format(pricechanges))
-	screen_output.append(['Number of EHHapp formulary price changes',pricechanges])
-
-	print('Number of invoice medications without match: {}'.format(len(pricetable_unmatched_meds)))
-	screen_output.append(['Number of invoice medications without match',pricetable_unmatched_meds])
-
-	#TODO update the screen output
+	##TODO update the screen output
+	
 	return pricetable_unmatched_meds, screen_output
 
 if __name__ == "__main__":

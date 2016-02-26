@@ -13,6 +13,12 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['OUTPUT_FOLDER'] = OUTPUT_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 100*1024*1024 # Set max upload file size to 100mb
 
+
+def json_encode_set(obj):
+    if isinstance(obj, set):
+        return list(obj)
+    raise TypeError
+
 def allowed_file(filename):
 	return '.' in filename and \
 		filename.rsplit('.',1)[1] in ALLOWED_EXTENSIONS
@@ -49,14 +55,19 @@ def process_file():
 	pricetable_unmatched_meds, output_filename_list, screen_output, fuzzymatches = update_rx(formulary, invoice, pricetable)
 	'''
 	pricetable_updated_path, screen_output, output_filename_list = process_pricetable(invoice_path, pricetable_path, verbose_debug=False)
+
+	app.logger.debug(screen_output) #debugging
+	
 	pricetable_unmatched_meds, output_filename_list, screen_output, fuzzymatches = process_formulary(pricetable_updated_path, formulary_md_path, output_filename_list, screen_output)
 
+	app.logger.debug(screen_output) #debugging
+	
 	# Store output files list, screen output, and unmatched medications as cookies
 	# Render selection.html page
 	resp = make_response(render_template('selection.html', output_filename_list=output_filename_list, screen_output=screen_output, pricetable_unmatched_meds=pricetable_unmatched_meds, fuzzymatches=fuzzymatches))
 
 	json_output_filename_list = json.dumps(output_filename_list)
-	json_pricetable_unmatched_meds = json.dumps(pricetable_unmatched_meds)
+	json_pricetable_unmatched_meds = json.dumps(pricetable_unmatched_meds, default=json_encode_set)
 	json_screen_output = json.dumps(screen_output)
 
 	resp.set_cookie('formulary_md_path', formulary_md_path)
@@ -78,8 +89,12 @@ def result():
 	formulary_md_path = request.cookies.get('formulary_md_path')
 
 	output_filename_list = json.loads(json_output_filename_list)
-	pricetable_unmatched_meds = json.loads(json_pricetable_unmatched_meds)
+	pricetable_unmatched_meds_list = json.loads(json_pricetable_unmatched_meds)
 	screen_output = json.loads(json_screen_output)
+
+	pricetable_unmatched_meds = set()
+	for entry in pricetable_unmatched_meds_list:
+		pricetable_unmatched_meds.add(entry)
 
 	'''
 	app.logger.debug("Checking cookies...") #debugging

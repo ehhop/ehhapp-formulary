@@ -401,7 +401,7 @@ def formulary_update_from_pricetable(formulary, pricetable, set_similarity_ratin
 	pricechanges = 0
 
 	# Keeps track of pricetable medications without a match in the pricetable
-	pricetable_unmatched_meds = []
+	pricetable_unmatched_meds = set()
 
 	# Captures fuzzy matches between invoice and formulary medications
 	fuzzymatches = {}
@@ -439,14 +439,17 @@ def formulary_update_from_pricetable(formulary, pricetable, set_similarity_ratin
 					if dosepatt.search(invnamedose):
 						softmatch = True
 						smatchcount += 1
-						has_pricetable_match = True
 
 					# Is match formulary name is subset of pricetable name and doses are same
 					if match_string(mdname, invnamedose):
 
+						# Mark if invoice entry as a match with an EHHapp formuary medication (regardless of dose)
+						has_pricetable_match = True
+
 						if dosepatt.search(invnamedose):
-							mcount += 1
 							
+							mcount += 1
+
 							if price_disc(mdcost, invcost):
 								pricechanges += 1
 								record.PRICETABLE[k] = v._replace(COST = invcost, ITEMNUM = itemnum)
@@ -486,7 +489,7 @@ def formulary_update_from_pricetable(formulary, pricetable, set_similarity_ratin
 							'''
 		if has_pricetable_match == False:
 			capture = invnamedose
-			pricetable_unmatched_meds.append(capture)
+			pricetable_unmatched_meds.add(capture)
 
 	return mcount, pricechanges, formulary, smatchcount, pricetable_unmatched_meds, fuzzymatches
 
@@ -553,10 +556,9 @@ def formulary_update_from_usermatches(formulary, usermatches, pricetable_unmatch
 						print("New price found for {} a.k.a. {}\nFormulary price: {}\nInvoice price: {}".format(invnamedose, k, mdcost, invcost))
 						print("Formulary updated so price is now {}".format(record.PRICETABLE[k].COST))
 
-		if has_pricetable_match == False:
-			capture = invnamedose
-			pricetable_unmatched_meds.append(capture)
-
+			# Remove user matched medcations from the list of unmatched invoice mediations
+			pricetable_unmatched_meds.remove(capture)
+			
 	return newmcount, newpricechanges, formulary, pricetable_unmatched_meds
 
 """

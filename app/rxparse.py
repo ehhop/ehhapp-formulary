@@ -3,7 +3,7 @@ import csv
 from statistics import mean
 from fuzzywuzzy import fuzz
 from datetime import datetime
-from collections import namedtuple OrderedDict
+from collections import namedtuple, OrderedDict
 import os
 
 
@@ -540,9 +540,9 @@ def formulary_update_from_usermatches(formulary, usermatches, pricetable_unmatch
 			md_medication = record.PRICETABLE[MD_NAMEDOSE]
 			
 			newmcount += 1
-
+			
 			# Update formulary medication price if there is price difference
-			if md_medication.COST != inv_price
+			if md_medication.COST != inv_price:
 				newpricechanges += 1
 				record.PRICETABLE[k] = v._replace(COST = inv_price, ITEMNUM = inv_itemnum)
 				print("New price found for {} a.k.a. {}\nFormulary price: {}\nInvoice price: {}".format(invnamedose, k, mdcost, invcost))
@@ -590,11 +590,12 @@ def formulary_to_TSV(formulary, updated_pricetable_path):
 """
 Janky ass debug functions
 """
+'''
 def screen_and_console_print(output, screen_output):
 	print(output)
 	screen_output.append(output)
 	return screen_output
-
+'''
 def process_pricetable(invoice_path, pricetable_path, verbose_debug=False):
 	'''Main function of script. Creates updated formulary markdown and pricetable.
 
@@ -602,11 +603,11 @@ def process_pricetable(invoice_path, pricetable_path, verbose_debug=False):
 	Input varibles are filenames without the file path prefix.
 	Verbose output displays subsets of data during each step of processing.
 	'''
-	# Process fileio
+	# Process FileIO
 	output_filename_list = []
 
 	pricetable_filename = pricetable_path.split('/')[-1] #remove directory from filename
-	pricetable_filename_no_extension = pricetable_filename.split('/', 1)[0]
+	pricetable_filename_no_extension = pricetable_filename.split('.', 1)[0]
 
 	current_script_path = os.path.realpath(__file__)[:-len('/rxparse.py')]
 	pricetable_updated_path = current_script_path+'/output/'+pricetable_filename_no_extension+'_UPDATED.tsv'
@@ -614,14 +615,14 @@ def process_pricetable(invoice_path, pricetable_path, verbose_debug=False):
 	output_filename_list.append(pricetable_filename_no_extension+'_UPDATED.tsv')
 
 	# Create container for webpage output
-	screen_output = OrderedDict()
+	screen_output = []
 
 	# Processing Invoice
 	print('\nProcessing Invoice...')
 	
 	recordlist = read_csv(str(invoice_path))
-	print('Number of invoice entries: {}'.format(len(recordlist))
-	screen_output.update({'Number of invoice entries':len(recordlist)})
+	print('Number of invoice entries: {}'.format(len(recordlist)))
+	screen_output.append(['Number of invoice entries',len(recordlist)])
 
 	if verbose_debug:
 		print('Sample Invoice:')
@@ -629,14 +630,25 @@ def process_pricetable(invoice_path, pricetable_path, verbose_debug=False):
 
 	pricetable = read_pricetable(pricetable_path)
 	pricetable_updated = compare_pricetable(pricetable, recordlist)
+	write_pricetable(pricetable, pricetable_updated_path)
 
-	print('Number of price table entries: {}'.format(len(pricetable))
-	screen_output.update({'Number of price table entries':len(pricetable)})
+	print('Number of price table entries: {}'.format(len(pricetable)))
+	screen_output.append(['Number of price table entries',len(pricetable)])
 	print('Each Entry is a: {}'.format(type(next(iter(pricetable.values())))))
-
 	return(pricetable_updated_path, screen_output, output_filename_list)
 
-def process_formulary(pricetable_updated_path, formulary_md_path, output_filename_list):
+def process_formulary(pricetable_updated_path, formulary_md_path, output_filename_list, screen_output, verbose_debug=False):
+	# Process FileIO
+	formulary_md_filename = formulary_md_path.split('/')[-1] #remove directory from filename
+	formulary_md_filename_no_extension = formulary_md_filename.split('.', 1)[0]
+
+	current_script_path = os.path.realpath(__file__)[:-len('/rxparse.py')]
+
+	formulary_update_rm_path = current_script_path+'/output/'+formulary_md_filename_no_extension+'_UPDATED.markdown'
+	output_filename_list.append(formulary_md_filename_no_extension+'_UPDATED.markdown')
+	formulary_update_tsv_path = current_script_path+'/output/'+formulary_md_filename_no_extension+'_UPDATED.tsv'
+	output_filename_list.append(formulary_md_filename_no_extension+'_UPDATED.tsv')
+
 	# Load updated pricetable
 	pricetable = read_pricetable(pricetable_updated_path)
 
@@ -645,7 +657,9 @@ def process_formulary(pricetable_updated_path, formulary_md_path, output_filenam
 	formularylist = read_md(str(formulary_md_path))
 	formularyparsed = parse_mddata(formularylist)
 
-	screen_output = screen_and_console_print('Number of EHHapp formulary medications: {}'.format(len(formularyparsed)), screen_output)
+	print('Number of EHHapp formulary medications: {}'.format(len(formularyparsed)))
+	screen_output.append(['Number of EHHapp formulary medications',len(formularyparsed)])
+
 	if verbose_debug:
 		print('Extracted Formulary Entries:')
 		print(formularyparsed[0])
@@ -657,10 +671,18 @@ def process_formulary(pricetable_updated_path, formulary_md_path, output_filenam
 	# Updating Formulary Against Invoice
 	print('\nFinding Matches...')
 	mcount, pricechanges, updatedformulary, softmatch, pricetable_unmatched_meds, fuzzymatches = formulary_update_from_pricetable(formulary, pricetable)
-	screen_output = screen_and_console_print('Number of partial medication matches: {}'.format(softmatch), screen_output)
-	screen_output = screen_and_console_print('Number of medication matches: {}'.format(mcount), screen_output)
-	screen_output = screen_and_console_print('Number of EHHapp formulary price changes: {}'.format(pricechanges), screen_output)
-	screen_output = screen_and_console_print('Number of invoice medications without match: {}'.format(len(pricetable_unmatched_meds)), screen_output)
+
+	print('Number of partial medication matches: {}'.format(softmatch))
+	screen_output.append(['Number of partial medication matches',softmatch])
+
+	print('Number of medication matches: {}'.format(mcount))
+	screen_output.append(['Number of medication matches',mcount])
+
+	print('Number of EHHapp formulary price changes: {}'.format(pricechanges))
+	screen_output.append(['Number of EHHapp formulary price changes',pricechanges])
+
+	print('Number of invoice medications without match: {}'.format(len(pricetable_unmatched_meds)))
+	screen_output.append(['Number of invoice medications without match',pricetable_unmatched_meds])
 
 	if verbose_debug:
 		print('Number of invoice medications without match')
@@ -670,13 +692,14 @@ def process_formulary(pricetable_updated_path, formulary_md_path, output_filenam
 		for i in range(0,4):
 			print('updated Formulary markdown: {}'.format(updatedformulary[i]._to_markdown()))
 	
-	formulary_to_Markdown(updatedformulary, formulary_update_from_pricetabled_rm_path)
-	formulary_to_TSV(updatedformulary, formulary_update_from_pricetabled_tsv_path)
-	write_pricetable(pricetable, pricetable_updated_path)
-	
+	formulary_to_Markdown(updatedformulary, formulary_update_rm_path)
+	formulary_to_TSV(updatedformulary, formulary_update_tsv_path)
+
 	# Test BLACKLISTED attribute
 	blacklisted = [d for d in updatedformulary if d.BLACKLISTED]
-	screen_output = screen_and_console_print('Number of blacklisted drugs: {}'.format(len(blacklisted)), screen_output)
+
+	print('Number of blacklisted drugs: {}'.format(len(blacklisted)))
+	screen_output.append(['Number of blacklisted drugs',len(blacklisted)])
 
 	return pricetable_unmatched_meds, output_filename_list, screen_output, fuzzymatches
 

@@ -2,7 +2,7 @@ from __future__ import print_function
 import os, json
 from flask import Flask, render_template, request, redirect, url_for, send_from_directory, make_response
 from werkzeug import secure_filename
-from app.rxparse import update_rx
+from app.rxparse import process_pricetable, process_formulary
 
 UPLOAD_FOLDER = 'app/input'
 OUTPUT_FOLDER = 'app/output'
@@ -40,23 +40,24 @@ def process_file():
 			file.save(os.path.join(app.config['UPLOAD_FOLDER'],filename))
 			upload_filepath_list.append(os.path.join(app.config['UPLOAD_FOLDER'],filename))
 
-	formulary = str(upload_filepath_list[0])
-	invoice = str(upload_filepath_list[1])
-	pricetable = str(upload_filepath_list[2])
+	formulary_md_path = str(upload_filepath_list[0])
+	invoice_path = str(upload_filepath_list[1])
+	pricetable_path = str(upload_filepath_list[2])
 
 	# Run update function for pricetable and formulary and capture fuzzy matches
 	'''
 	pricetable_unmatched_meds, output_filename_list, screen_output, fuzzymatches = update_rx(formulary, invoice, pricetable)
 	'''
 	pricetable_updated_path, screen_output, output_filename_list = process_pricetable(invoice_path, pricetable_path, verbose_debug=False)
+	pricetable_unmatched_meds, output_filename_list, screen_output, fuzzymatches = process_formulary(pricetable_updated_path, formulary_md_path, output_filename_list, screen_output)
 
 	# Store output files list, screen output, and unmatched medications as cookies
 	# Render selection.html page
 	resp = make_response(render_template('selection.html', output_filename_list=output_filename_list, screen_output=screen_output, pricetable_unmatched_meds=pricetable_unmatched_meds, fuzzymatches=fuzzymatches))
 
 	json_output_filename_list = json.dumps(output_filename_list)
-	json_screen_output = json.dumps(screen_output)
 	json_pricetable_unmatched_meds = json.dumps(pricetable_unmatched_meds)
+	json_screen_output = json.dumps(screen_output)
 
 	resp.set_cookie('output_filename_list', json_output_filename_list)
 	resp.set_cookie('screen_output', json_screen_output)
@@ -75,8 +76,8 @@ def result():
 	json_pricetable_unmatched_meds = request.cookies.get('pricetable_unmatched_meds')
 
 	output_filename_list = json.loads(json_output_filename_list)
-	screen_output = json.loads(json_screen_output)
 	pricetable_unmatched_meds = json.loads(json_pricetable_unmatched_meds)
+	screen_output = json.loads(json_screen_output)
 
 	'''
 	app.logger.debug("Checking cookies...") #debugging
@@ -84,10 +85,10 @@ def result():
 	app.logger.debug(screen_output) #debugging
 	app.logger.debug(pricetable_unmatched_meds) #debugging
 	'''
-
+	
 	user_matches = request.form.getlist('usermatches')
-	app.logger.debug(matches) #debugging
-
+	app.logger.debug(user_matches) #debugging
+	
 	#function for adding user matches
 	#function for updating summary information
 	#function for processing file outputs

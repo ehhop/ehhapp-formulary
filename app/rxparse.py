@@ -701,11 +701,32 @@ def process_usermatches(user_matches, formulary_md_path, pricetable_unmatched_me
 	formulary_update_tsv_path = current_script_path+'/output/'+formulary_md_filename_no_extension+'_UPDATED.tsv'
 	output_filename_list.append(formulary_md_filename_no_extension+'_UPDATED.tsv')
 
-	#TODO Add user matches to formulary
+	# Processing formulary
+	print('\nProcessing Formulary Markdown...')
+	formularylist = read_md(str(formulary_md_path))
+	formularyparsed = parse_mddata(formularylist)
+	formulary = store_formulary(formularyparsed)
 
-	# Output updates formulary as markdown and tsv
+	newmcount, newpricechanges, updatedformulary, pricetable_unmatched_meds = formulary_update_from_usermatches(formulary, usermatches, pricetable_unmatched_meds):
+	
+	# Save updated formulary as markdown and tsv
 	formulary_to_Markdown(updatedformulary, formulary_update_rm_path)
 	formulary_to_TSV(updatedformulary, formulary_update_tsv_path)
+	
+	print('Number of partial medication matches: {}'.format(softmatch))
+	screen_output.append(['Number of partial medication matches',softmatch])
+
+	print('Number of medication matches: {}'.format(mcount))
+	screen_output.append(['Number of medication matches',mcount])
+
+	print('Number of EHHapp formulary price changes: {}'.format(pricechanges))
+	screen_output.append(['Number of EHHapp formulary price changes',pricechanges])
+
+	print('Number of invoice medications without match: {}'.format(len(pricetable_unmatched_meds)))
+	screen_output.append(['Number of invoice medications without match',pricetable_unmatched_meds])
+
+	#TODO update the screen output
+	return pricetable_unmatched_meds, screen_output
 
 if __name__ == "__main__":
 	from sys import argv

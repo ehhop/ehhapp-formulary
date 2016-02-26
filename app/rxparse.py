@@ -519,7 +519,7 @@ def formulary_update_from_usermatches(formulary, usermatches, pricetable_unmatch
 			)
 
 		# Use markdown formulary NAMEDOSE field as the key 'k' for our dictionary of InvRec objects
-		k = entry.NAMEDOSE
+		k = entry.MD_NAMEDOSE
 
 		# All keys will be stored immediately with their corresponding values.
 		matches[k] = entry
@@ -536,17 +536,22 @@ def formulary_update_from_usermatches(formulary, usermatches, pricetable_unmatch
 			inv_price = v.INV_PRICE
 			inv_itemnum = v.INV_ITEMNUM
 
-			# Find formulary medication with same namedose as fuzzy match
-			md_medication = record.PRICETABLE[MD_NAMEDOSE]
-			
-			newmcount += 1
-			
-			# Update formulary medication price if there is price difference
-			if md_medication.COST != inv_price:
-				newpricechanges += 1
-				record.PRICETABLE[k] = v._replace(COST = inv_price, ITEMNUM = inv_itemnum)
-				print("New price found for {} a.k.a. {}\nFormulary price: {}\nInvoice price: {}".format(invnamedose, k, mdcost, invcost))
-				print("Formulary updated so price is now {}".format(record.PRICETABLE[k].COST))
+			# Then loop through each dose/cost pair for the given record
+			for k, v in record.PRICETABLE.items():
+				mdnamedose = k.lower()
+				mdcost = v.COST.lower()
+
+				# Find formulary medication with same namedose as fuzzy match
+				if md_namedose == mdnamedose:
+				
+					newmcount += 1
+					
+					# Update formulary medication price if there is price difference
+					if mdcost != inv_price:
+						newpricechanges += 1
+						record.PRICETABLE[k] = v._replace(COST = inv_price, ITEMNUM = inv_itemnum)
+						print("New price found for {} a.k.a. {}\nFormulary price: {}\nInvoice price: {}".format(invnamedose, k, mdcost, invcost))
+						print("Formulary updated so price is now {}".format(record.PRICETABLE[k].COST))
 
 		if has_pricetable_match == False:
 			capture = invnamedose

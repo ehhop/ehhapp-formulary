@@ -2,7 +2,7 @@ from __future__ import print_function
 import os, json
 from flask import Flask, render_template, request, redirect, url_for, send_from_directory, make_response
 from werkzeug import secure_filename
-from app.rxparse import process_pricetable, process_formulary
+from app.rxparse import process_pricetable, process_formulary, process_usermatches
 
 UPLOAD_FOLDER = 'app/input'
 OUTPUT_FOLDER = 'app/output'
@@ -88,18 +88,14 @@ def result():
 	app.logger.debug(pricetable_unmatched_meds) #debugging
 	'''
 	
-	user_matches = request.form.getlist('usermatches')
-	app.logger.debug(user_matches) #debugging
+	usermatches = request.form.getlist('usermatches')
+	app.logger.debug(usermatches) #debugging
 	
-	pricetable_unmatched_meds, screen_output = process_usermatches(user_matches, formulary_md_path, pricetable_unmatched_meds, screen_output)
-	#function for adding user matches
-	#function for updating summary information
-	#function for processing file outputs
+	pricetable_unmatched_meds, screen_output = process_usermatches(usermatches, formulary_md_path, pricetable_unmatched_meds, output_filename_list, screen_output)
+	
+	#TODO function for updating summary information
 
-	return render_template('result.html')
-	'''
 	return render_template('result.html', output_filename_list=output_filename_list, screen_output=screen_output, pricetable_unmatched_meds=pricetable_unmatched_meds)
-	'''
 
 if __name__ == '__main__':
 	port = int(os.environ.get('PORT', 5050))

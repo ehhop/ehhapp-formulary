@@ -689,7 +689,7 @@ def process_formulary(pricetable_updated_path, formulary_md_path, output_filenam
 
 	return pricetable_unmatched_meds, output_filename_list, screen_output, fuzzymatches
 
-def process_usermatches(user_matches, formulary_md_path, pricetable_unmatched_meds, screen_output):
+def process_usermatches(usermatches, formulary_md_path, pricetable_unmatched_meds, output_filename_list, screen_output):
 	# Process FileIO
 	formulary_md_filename = formulary_md_path.split('/')[-1] #remove directory from filename
 	formulary_md_filename_no_extension = formulary_md_filename.split('.', 1)[0]
@@ -707,12 +707,12 @@ def process_usermatches(user_matches, formulary_md_path, pricetable_unmatched_me
 	formularyparsed = parse_mddata(formularylist)
 	formulary = store_formulary(formularyparsed)
 
-	newmcount, newpricechanges, updatedformulary, pricetable_unmatched_meds = formulary_update_from_usermatches(formulary, usermatches, pricetable_unmatched_meds):
-	
+	newmcount, newpricechanges, updatedformulary, pricetable_unmatched_meds = formulary_update_from_usermatches(formulary, usermatches, pricetable_unmatched_meds)
+
 	# Save updated formulary as markdown and tsv
 	formulary_to_Markdown(updatedformulary, formulary_update_rm_path)
 	formulary_to_TSV(updatedformulary, formulary_update_tsv_path)
-	
+
 	print('Number of partial medication matches: {}'.format(softmatch))
 	screen_output.append(['Number of partial medication matches',softmatch])
 

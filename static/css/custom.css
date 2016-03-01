@@ -6,6 +6,13 @@ label {
 	color: 444442;
 	margin-bottom: 10px;
 }
+.btn-toolbar {
+	margin-left: 0px;
+}
+.btn {
+	margin-left: 0px;
+	margin-right: 5px;
+}
 .error-label {
 	color: red;
 }

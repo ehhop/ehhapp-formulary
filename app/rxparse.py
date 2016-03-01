@@ -721,7 +721,8 @@ def process_usermatches(usermatches, formulary_md_path, pricetable_unmatched_med
 	formulary_to_TSV(updatedformulary, formulary_update_tsv_path)
 
 	##TODO update the screen output
-	
+	##TODO modify screen output formating
+
 	return pricetable_unmatched_meds, screen_output
 
 if __name__ == "__main__":

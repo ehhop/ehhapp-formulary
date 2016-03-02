@@ -106,6 +106,12 @@ def result():
 	
 	pricetable_unmatched_meds, screen_output = process_usermatches(usermatches, formulary_md_path, pricetable_unmatched_meds, output_filename_list, screen_output)
 
+	# Convert screen output from array to strings
+	screen_output_strings = []
+	for line in screen_output:
+		screen_output_strings.append(line[0] + ': ' + str(line[1]))
+	screen_output = screen_output_strings
+	
 	return render_template('result.html', output_filename_list=output_filename_list, screen_output=screen_output, pricetable_unmatched_meds=pricetable_unmatched_meds)
 
 if __name__ == '__main__':
@@ -113,6 +119,6 @@ if __name__ == '__main__':
 	app.run(
 		host='0.0.0.0',
 		port=port,
-		debug=False,
+		debug=True,
 		use_reloader=True
 	)

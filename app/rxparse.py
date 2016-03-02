@@ -720,8 +720,10 @@ def process_usermatches(usermatches, formulary_md_path, pricetable_unmatched_med
 	formulary_to_Markdown(updatedformulary, formulary_update_rm_path)
 	formulary_to_TSV(updatedformulary, formulary_update_tsv_path)
 
-	##TODO update the screen output
-	##TODO modify screen output formating
+	# Update screen outputs
+	screen_output[4][1] = screen_output[4][1] + newmcount # Number of matches
+	screen_output[5][1] = screen_output[5][1] + newpricechanges # Number of price changes
+	screen_output[6][1] = screen_output[6][1] - newmcount # Number of unmatched invoice entries
 
 	return pricetable_unmatched_meds, screen_output
 

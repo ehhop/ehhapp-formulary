@@ -55,8 +55,6 @@ def process_file():
 	pricetable_unmatched_meds, output_filename_list, screen_output, fuzzymatches = update_rx(formulary, invoice, pricetable)
 	'''
 	pricetable_updated_path, screen_output, output_filename_list = process_pricetable(invoice_path, pricetable_path, verbose_debug=False)
-
-	app.logger.debug(screen_output) #debugging
 	
 	pricetable_unmatched_meds, output_filename_list, screen_output, fuzzymatches = process_formulary(pricetable_updated_path, formulary_md_path, output_filename_list, screen_output)
 
@@ -107,8 +105,6 @@ def result():
 	app.logger.debug(usermatches) #debugging
 	
 	pricetable_unmatched_meds, screen_output = process_usermatches(usermatches, formulary_md_path, pricetable_unmatched_meds, output_filename_list, screen_output)
-	
-	#TODO function for updating summary information
 
 	return render_template('result.html', output_filename_list=output_filename_list, screen_output=screen_output, pricetable_unmatched_meds=pricetable_unmatched_meds)
 
@@ -117,6 +113,6 @@ if __name__ == '__main__':
 	app.run(
 		host='0.0.0.0',
 		port=port,
-		debug=True,
+		debug=False,
 		use_reloader=True
 	)

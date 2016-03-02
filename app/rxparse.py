@@ -603,7 +603,7 @@ def screen_and_console_print(output, screen_output):
 	screen_output.append(output)
 	return screen_output
 '''
-def process_pricetable(invoice_path, pricetable_path, verbose_debug=False):
+def process_pricetable(invoice_path, pricetable_path, debug=True, verbose_debug=False):
 	'''Main function of script. Creates updated formulary markdown and pricetable.
 
 	Data files need to be place in a subfolder named "input".
@@ -612,12 +612,15 @@ def process_pricetable(invoice_path, pricetable_path, verbose_debug=False):
 	'''
 	# Process FileIO
 	output_filename_list = []
-
+	
 	pricetable_filename = pricetable_path.split('/')[-1] #remove directory from filename
 	pricetable_filename_no_extension = pricetable_filename.split('.', 1)[0]
 
 	current_script_path = os.path.realpath(__file__)[:-len('/rxparse.py')]
-	pricetable_updated_path = current_script_path+'/output/'+pricetable_filename_no_extension+'_UPDATED.tsv'
+	if debug == True:
+		pricetable_updated_path = current_script_path+'/testing/'+pricetable_filename_no_extension+'_UPDATED.tsv'
+	else:
+		pricetable_updated_path = current_script_path+'/persistent/'+pricetable_filename_no_extension+'_UPDATED.tsv'
 	
 	output_filename_list.append(pricetable_filename_no_extension+'_UPDATED.tsv')
 

@@ -5,14 +5,16 @@ from werkzeug import secure_filename
 from app.rxparse import process_pricetable, process_formulary, process_usermatches
 
 UPLOAD_FOLDER = 'app/input'
+PERSISTENT_FOLDER = 'app/persistent'
 OUTPUT_FOLDER = 'app/output'
 ALLOWED_EXTENSIONS = set(['txt','xls','xlsx','csv','tsv','md', 'markdown'])
+PERSISTENT_PRICETABLE_FILENAME = 'persistent-pricetable.tsv'
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['PERSISTENT_FOLDER'] = PERSISTENT_FOLDER
 app.config['OUTPUT_FOLDER'] = OUTPUT_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 100*1024*1024 # Set max upload file size to 100mb
-
 
 def json_encode_set(obj):
     if isinstance(obj, set):
@@ -48,8 +50,8 @@ def process_file():
 
 	formulary_md_path = str(upload_filepath_list[0])
 	invoice_path = str(upload_filepath_list[1])
-	pricetable_path = str(upload_filepath_list[2])
-
+	pricetable_path = os.path.join(app.config['PERSISTENT_FOLDER'],PERSISTENT_PRICETABLE_FILENAME)
+	
 	# Run update function for pricetable and formulary and capture fuzzy matches
 	'''
 	pricetable_unmatched_meds, output_filename_list, screen_output, fuzzymatches = update_rx(formulary, invoice, pricetable)

@@ -6,6 +6,9 @@ label {
 	color: 444442;
 	margin-bottom: 10px;
 }
+h4 {
+	margin-bottom: 15px;
+}
 .btn-toolbar {
 	margin-left: 0px;
 }
@@ -54,7 +57,7 @@ label {
 	margin: 0 0 0 0;
 }
 #fuzzymatches {
-    margin:1px;
+    margin:2px;
     float:left;
 }
 #fuzzymatches label {

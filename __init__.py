@@ -1,5 +1,5 @@
 from __future__ import print_function
-import os, json, datetime
+import os, os.path, json, datetime
 from flask import Flask, render_template, request, redirect, url_for, send_from_directory, make_response
 from werkzeug import secure_filename
 from app.rxparse import process_pricetable, process_formulary, process_usermatches
@@ -48,22 +48,27 @@ def process_file():
 		# Save files and create list of file paths
 		if file and allowed_file(file.filename):
 
-			# Save files in upload folders
+			# Save files in upload folder
 			filename = secure_filename(file.filename)
 			file.save(os.path.join(app.config['UPLOAD_FOLDER'],filename))
 			upload_filepath_list.append(os.path.join(app.config['UPLOAD_FOLDER'],filename))
 
-			# Also save additional backup of the markdown file with a datetime string in the filename
+			# Also save additional backup of the markdown file with a datetime in filename
 			if filename.split('.')[-1] == 'md' or filename.split('.')[-1] == 'markdown':
-				datetime_string = datetime.datetime.now().strftime("%Y.%m.%d-%H.%M.%S")
-				#filename_no_extension = filename.split('.', 1)[0]
-				#filename_extension = filename.split('.')[-1]
+				datetime_string = datetime.datetime.now().strftime("%Y.%m.%d") # Override previous backups for currrent day
+				backup_directory = app.config['BACKUP_FOLDER']
+				num_files = len([f for f in os.listdir(backup_directory) if os.path.isfile(os.path.join(backup_directory,f))])
 				filename_datetime = datetime_string+'_backup_'+filename
-				file.save(os.path.join(app.config['BACKUP_FOLDER'],filename_datetime))
+				file.save(os.path.join(backup_directory,filename_datetime))
+
+				# Only keep 15 most recent backups
+				num_files = len([f for f in os.listdir(backup_directory) if os.path.isfile(os.path.join(backup_directory,f))])
+				if num_files > 15:
+					first_file = os.listdir(path)[0]
+					os.remove(os.path.join(backup_directory,first_file))
 
 	formulary_md_path = str(upload_filepath_list[0])
 	invoice_path = str(upload_filepath_list[1])
-
 	pricetable_path = os.path.join(app.config['PERSISTENT_FOLDER'],PERSISTENT_PRICETABLE_FILENAME)
 
 	# Run update function for pricetable and formulary and capture fuzzy matches

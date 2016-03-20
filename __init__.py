@@ -1,11 +1,12 @@
 from __future__ import print_function
-import os, json
+import os, json, datetime
 from flask import Flask, render_template, request, redirect, url_for, send_from_directory, make_response
 from werkzeug import secure_filename
 from app.rxparse import process_pricetable, process_formulary, process_usermatches
 
 UPLOAD_FOLDER = 'app/input'
 PERSISTENT_FOLDER = 'app/persistent'
+BACKUP_FOLDER = 'app/markdown-backup'
 OUTPUT_FOLDER = 'app/output'
 ALLOWED_EXTENSIONS = set(['txt','xls','xlsx','csv','tsv','md', 'markdown'])
 PERSISTENT_PRICETABLE_FILENAME = 'persistent-pricetable.tsv'
@@ -13,6 +14,7 @@ PERSISTENT_PRICETABLE_FILENAME = 'persistent-pricetable.tsv'
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['PERSISTENT_FOLDER'] = PERSISTENT_FOLDER
+app.config['BACKUP_FOLDER'] = BACKUP_FOLDER
 app.config['OUTPUT_FOLDER'] = OUTPUT_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 100*1024*1024 # Set max upload file size to 100mb
 
@@ -42,16 +44,28 @@ def process_file():
 		if file.filename == '':  
 			error_prompt = 'Please check that all files have been selected for upload'
 			return render_template('index.html', error_prompt=error_prompt)
+
 		# Save files and create list of file paths
 		if file and allowed_file(file.filename):
+
+			# Save files in upload folders
 			filename = secure_filename(file.filename)
 			file.save(os.path.join(app.config['UPLOAD_FOLDER'],filename))
 			upload_filepath_list.append(os.path.join(app.config['UPLOAD_FOLDER'],filename))
 
+			# Also save additional backup of the markdown file with a datetime string in the filename
+			if filename.split('.')[-1] == 'md' or filename.split('.')[-1] == 'markdown':
+				datetime_string = datetime.datetime.now().strftime("%Y.%m.%d-%H.%M.%S")
+				#filename_no_extension = filename.split('.', 1)[0]
+				#filename_extension = filename.split('.')[-1]
+				filename_datetime = datetime_string+'_backup_'+filename
+				file.save(os.path.join(app.config['BACKUP_FOLDER'],filename_datetime))
+
 	formulary_md_path = str(upload_filepath_list[0])
 	invoice_path = str(upload_filepath_list[1])
+
 	pricetable_path = os.path.join(app.config['PERSISTENT_FOLDER'],PERSISTENT_PRICETABLE_FILENAME)
-	
+
 	# Run update function for pricetable and formulary and capture fuzzy matches
 	'''
 	pricetable_unmatched_meds, output_filename_list, screen_output, fuzzymatches = update_rx(formulary, invoice, pricetable)

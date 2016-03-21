@@ -102,7 +102,7 @@ h4 {
   position:absolute;
   width:58px;
   height:58px;
-  border:5px solid rgb(25,25,25);
+  border:5px solid rgb(100,100,100);
   border-radius:58px;
     -o-border-radius:58px;
     -ms-border-radius:58px;
@@ -142,7 +142,7 @@ h4 {
   top:-14px;
   width:23px;
   height:23px;
-  background:rgb(25,25,25);
+  background:rgb(100,100,100);
   border-radius:19px;
     -o-border-radius:19px;
     -ms-border-radius:19px;

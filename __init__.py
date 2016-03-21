@@ -72,9 +72,6 @@ def process_file():
 	pricetable_path = os.path.join(app.config['PERSISTENT_FOLDER'],PERSISTENT_PRICETABLE_FILENAME)
 
 	# Run update function for pricetable and formulary and capture fuzzy matches
-	'''
-	pricetable_unmatched_meds, output_filename_list, screen_output, fuzzymatches = update_rx(formulary, invoice, pricetable)
-	'''
 	pricetable_updated_path, screen_output, output_filename_list = process_pricetable(invoice_path, pricetable_path, verbose_debug=False)
 	
 	pricetable_unmatched_meds, output_filename_list, screen_output, fuzzymatches = process_formulary(pricetable_updated_path, formulary_md_path, output_filename_list, screen_output)
@@ -114,13 +111,6 @@ def result():
 	pricetable_unmatched_meds = set()
 	for entry in pricetable_unmatched_meds_list:
 		pricetable_unmatched_meds.add(entry)
-
-	'''
-	app.logger.debug("Checking cookies...") #debugging
-	app.logger.debug(output_filename_list) #debugging
-	app.logger.debug(screen_output) #debugging
-	app.logger.debug(pricetable_unmatched_meds) #debugging
-	'''
 	
 	usermatches = request.form.getlist('usermatches')
 	app.logger.debug(usermatches) #debugging

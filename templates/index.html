@@ -6,10 +6,27 @@
 	<link rel="stylesheet" href="/static/css/bootstrap.min.css">
 	<link rel="stylesheet" href="/static/css/custom.css">
 	<script src = "https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.js"></script>
+	<script type="text/javascript">
+		//<![CDATA[
+        function loading(){
+            $("#bowlG").show();
+            $("#content").hide();       
+        }
+		//]]>
+	</script>
 </head>
 
 <body>
-	<div class="container">
+	<div hidden id="bowlG">
+		<div id="bowl_ringG">
+			<div class="ball_holderG">
+				<div class="ballG">
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="container" id="content">
 		<div class="header">
 			<h3 class="text-muted">EHHapp Formulary Updater</h3>
 		</div>
@@ -47,7 +64,7 @@
 			<div class="form-group">
  
 				<p class="text-center">
-					<input id="singlebutton" name="singlebutton" class="btn btn-primary" type="submit" value="Upload" />
+					<input onclick="loading();" id="singlebutton" name="singlebutton" class="btn btn-primary" type="submit" value="Upload"/>
 				</p>
 			</div>
  

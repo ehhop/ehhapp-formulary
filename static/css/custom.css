@@ -38,6 +38,8 @@ h4 {
 	cursor: inherit;
 	display: block;
 }
+
+/*layout of match summary screen*/
 .output-box {
 	line-height: 90%;
 	display: block;
@@ -56,6 +58,8 @@ h4 {
 #output-box-text {
 	margin: 0 0 0 0;
 }
+
+/*buttons for selecting fuzzy matches*/
 #fuzzymatches {
     margin:2px;
     float:left;
@@ -84,4 +88,106 @@ h4 {
 #fuzzymatches input:checked + span {
     background-color:#404040;
     color:#F7F7F7;
+}
+
+/*loading animation*/
+#bowlG{
+  position:relative;
+  width:58px;
+  height:58px;
+  margin:auto;
+  margin-top: 100px;
+}
+#bowl_ringG{
+  position:absolute;
+  width:58px;
+  height:58px;
+  border:5px solid rgb(25,25,25);
+  border-radius:58px;
+    -o-border-radius:58px;
+    -ms-border-radius:58px;
+    -webkit-border-radius:58px;
+    -moz-border-radius:58px;
+}
+.ball_holderG{
+  position:absolute;
+  width:15px;
+  height:46px;
+  left:16px;
+  top:0px;
+  animation-name:ball_moveG;
+    -o-animation-name:ball_moveG;
+    -ms-animation-name:ball_moveG;
+    -webkit-animation-name:ball_moveG;
+    -moz-animation-name:ball_moveG;
+  animation-duration:1.3s;
+    -o-animation-duration:1.3s;
+    -ms-animation-duration:1.3s;
+    -webkit-animation-duration:1.3s;
+    -moz-animation-duration:1.3s;
+  animation-iteration-count:infinite;
+    -o-animation-iteration-count:infinite;
+    -ms-animation-iteration-count:infinite;
+    -webkit-animation-iteration-count:infinite;
+    -moz-animation-iteration-count:infinite;
+  animation-timing-function:linear;
+    -o-animation-timing-function:linear;
+    -ms-animation-timing-function:linear;
+    -webkit-animation-timing-function:linear;
+    -moz-animation-timing-function:linear;
+}
+.ballG{
+  position:absolute;
+  left:0px;
+  top:-14px;
+  width:23px;
+  height:23px;
+  background:rgb(25,25,25);
+  border-radius:19px;
+    -o-border-radius:19px;
+    -ms-border-radius:19px;
+    -webkit-border-radius:19px;
+    -moz-border-radius:19px;
+}
+@keyframes ball_moveG{
+  0%{
+    transform:rotate(0deg)
+  }
+  100%{
+    transform:rotate(360deg)
+  }
+}
+@-o-keyframes ball_moveG{
+  0%{
+    -o-transform:rotate(0deg)
+  }
+  100%{
+    -o-transform:rotate(360deg)
+  }
+}
+@-ms-keyframes ball_moveG{
+  0%{
+    -ms-transform:rotate(0deg)
+  }
+  100%{
+    -ms-transform:rotate(360deg)
+  }
+}
+@-webkit-keyframes ball_moveG{
+  0%{
+    -webkit-transform:rotate(0deg)
+  }
+
+  100%{
+    -webkit-transform:rotate(360deg)
+  }
+}
+@-moz-keyframes ball_moveG{
+  0%{
+    -moz-transform:rotate(0deg)
+  }
+
+  100%{
+    -moz-transform:rotate(360deg)
+  }
 }

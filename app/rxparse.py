@@ -15,7 +15,7 @@ import os
 # Classes and Functions for reading and parsing invoices
 InvRec = namedtuple('InvoiceRecord', ['NAMEDOSE', 'NAME', 'DOSE', 'COST', 'CATEGORY', 'ITEMNUM',\
 		'ON_FORMULARY','REQDATE'])
-FuzzyMatch = namedtuple('FuzzyMatch', ['MD_NAMEDOSE', 'MD_PRICE', 'INV_NAMEDOSE', 'INV_PRICE', 'INV_ITEMNUM','ON_FORMULARY'])
+FuzzyMatch = namedtuple('FuzzyMatch', ['MD_NAMEDOSE', 'MD_PRICE', 'INV_NAMEDOSE', 'INV_PRICE', 'INV_ITEMNUM'])
 
 def read_csv(filename):
 	"""Read and filter a csv to create a list of drug and price records.
@@ -415,11 +415,13 @@ def formulary_update_from_pricetable(formulary, pricetable, set_similarity_ratin
 		# Set the PRICETABLE attribute
 		record._set_PRICETABLE()
 
+	print(pricetable)
+
 	# Look up a matching record stored in the invoice-derived pricetable
 	for nd, ir in pricetable.items():
 		invnamedose = nd.lower()
 		invcost = ir.COST.lower()
-		itemnum = ir.ITEMNUM
+		itemnum = ir.ITEMNUM.lower()
 
 		# Keeps track of whether there a match for each pricetable medication
 		has_pricetable_match = False
@@ -470,8 +472,7 @@ def formulary_update_from_pricetable(formulary, pricetable, set_similarity_ratin
 								MD_PRICE = mdcost,\
 								INV_NAMEDOSE = invnamedose,\
 								INV_PRICE = invcost,\
-								INV_ITEMNUM = itemnum,\
-								ON_FORMULARY = 'False')
+								INV_ITEMNUM = itemnum)
 							'''
 							print('\nFound a poor match...')
 							print('Formulary name and dose is: '+str(mdname)+' '+ str(mddose))
@@ -496,7 +497,7 @@ def formulary_update_from_pricetable(formulary, pricetable, set_similarity_ratin
 		if has_pricetable_match == False:
 			capture = invnamedose
 			pricetable_unmatched_meds.add(capture)
-			record.PRICETABLE[k] = v._replace(ON_FORMULARY = 'False')
+			pricetable[nd] = ir._replace(ON_FORMULARY = 'False')
 
 	return mcount, pricechanges, formulary, pricetable, smatchcount, pricetable_unmatched_meds, fuzzymatches
 
@@ -526,14 +527,17 @@ def formulary_update_from_usermatches(formulary, pricetable, usermatches, pricet
 			MD_PRICE = item[1],\
 			INV_NAMEDOSE = item[2],\
 			INV_PRICE = item[3],\
-			INV_ITEMNUM = item[4],\
-			ON_FORMULARY = 'True')
+			INV_ITEMNUM = item[4])
 
 		# Use markdown formulary NAMEDOSE field as the key 'k' for our dictionary of InvRec objects
 		k = entry.MD_NAMEDOSE
 
 		# All keys will be stored immediately with their corresponding values.
 		matches[k] = entry
+
+	# Update the persistent pricetable
+	# Note that medication is on the formulary
+	pricetable[MD_NAMEDOSE] = v._replace(ON_FORMULARY = 'True')
 
 	# Loop through each FormularyRecord
 	for record in formulary:
@@ -568,7 +572,7 @@ def formulary_update_from_usermatches(formulary, pricetable, usermatches, pricet
 			# Remove user matched medcations from the list of unmatched invoice mediations
 			pricetable_unmatched_meds.discard(md_namedose)
 
-	return newmcount, newpricechanges, formulary, pricetable_unmatched_meds
+	return newmcount, newpricechanges, formulary, pricetable_unmatched_meds, pricetable
 
 """
 ### WORK-IN-PROGRESS
@@ -726,7 +730,7 @@ def process_usermatches(usermatches, formulary_md_path, pricetable_unmatched_med
 	formularyparsed = parse_mddata(formularylist)
 	formulary = store_formulary(formularyparsed)
 
-	newmcount, newpricechanges, updatedformulary, pricetable_unmatched_meds = formulary_update_from_usermatches(formulary, usermatches, pricetable_unmatched_meds)
+	newmcount, newpricechanges, updatedformulary, pricetable_unmatched_meds, pricetable = formulary_update_from_usermatches(formulary, pricetable, usermatches, pricetable_unmatched_meds)
 
 	# Save updated formulary as markdown and tsv
 	formulary_to_Markdown(updatedformulary, formulary_update_rm_path)

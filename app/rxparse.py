@@ -14,8 +14,8 @@ import os
 """
 # Classes and Functions for reading and parsing invoices
 InvRec = namedtuple('InvoiceRecord', ['NAMEDOSE', 'NAME', 'DOSE', 'COST', 'CATEGORY', 'ITEMNUM',\
-		'REQDATE'])
-FuzzyMatch = namedtuple('FuzzyMatch', ['MD_NAMEDOSE', 'MD_PRICE', 'INV_NAMEDOSE', 'INV_PRICE', 'INV_ITEMNUM'])
+		'ON_FORMULARY','REQDATE'])
+FuzzyMatch = namedtuple('FuzzyMatch', ['MD_NAMEDOSE', 'MD_PRICE', 'INV_NAMEDOSE', 'INV_PRICE', 'INV_ITEMNUM','ON_FORMULARY'])
 
 def read_csv(filename):
 	"""Read and filter a csv to create a list of drug and price records.
@@ -46,7 +46,6 @@ def read_pricetable(pricetable_path):
 
 	# Open, read, and filter
 	with open(pricetable_path, 'rU') as f:
-		
 		# Instantiate csv.reader
 		readerobj = csv.reader(f, delimiter='\t')
 		next(readerobj) # Skip line with column headings
@@ -59,6 +58,7 @@ def read_pricetable(pricetable_path):
 			# Convert date string to datetime object
 			dtformat = '%Y-%m-%d %H:%M:%S'
 			datestr = item[4]
+
 			converteddatetime = datetime.strptime(datestr, dtformat)
 
 			# Instantiate namedtuple from using values returned by list indices
@@ -67,8 +67,9 @@ def read_pricetable(pricetable_path):
 					NAME = "NaN", \
 					DOSE = "NaN", \
 					COST = item[1], \
-					ITEMNUM = item[2], \
 					CATEGORY = item[3], \
+					ITEMNUM = item[2], \
+					ON_FORMULARY = "NaN", \
 					REQDATE = converteddatetime)
 
 			# Use NAMEDOSE field as the key 'k' for our dictionary of InvRec objects
@@ -96,12 +97,14 @@ def compare_pricetable(pricetable, invoice):
 		converteddatetime = datetime.strptime(datestr, dtformat)
 
 		# Instantiate namedtuple from using values returned by list indices
-		entry = InvRec(NAMEDOSE = item[3], \
+		entry = InvRec(
+				NAMEDOSE = item[3], \
 				NAME = "NaN", \
 				DOSE = "NaN", \
 				COST = item[15], \
-				ITEMNUM = item[2], \
 				CATEGORY = item[8], \
+				ITEMNUM = item[2], \
+				ON_FORMULARY = "NaN", \
 				REQDATE = converteddatetime)
 		
 		# Use NAMEDOSE field as the key 'k' for our dictionary of InvRec objects
@@ -123,11 +126,11 @@ def write_pricetable(pricetable, pricetable_path):
 	"""
 
 	with open(pricetable_path, "w") as f:
-		header_str = "\t".join(['NAME DOSE', 'COST', 'ITEM NUM', 'CATEGORY', 'REQDATE'])
+		header_str = "\t".join(['NAME DOSE', 'COST', 'ITEM NUM', 'CATEGORY', 'REQDATE', 'ON FORMULARY'])
 		writeList = [header_str]
 
 		for k, v in pricetable.items(): 
-			row = "{}\t{}\t{}\t{}\t{}".format(v.NAMEDOSE, v.COST, v.ITEMNUM, v.CATEGORY, v.REQDATE)
+			row = "{}\t{}\t{}\t{}\t{}\t{}".format(v.NAMEDOSE, v.COST, v.ITEMNUM, v.CATEGORY, v.REQDATE, v.ON_FORMULARY)
 			writeList.append(row)
 
 		writeString = "\n".join(writeList)
@@ -241,6 +244,7 @@ class FormularyRecord:
 					COST = cost,\
 					CATEGORY = self.CATEGORY,\
 					ITEMNUM = "NaN",\
+					ON_FORMULARY = "NaN",\
 					REQDATE = "NaN")
 
 	def _to_csv(self):
@@ -249,7 +253,7 @@ class FormularyRecord:
 		ndc_list = []
 
 		for k, v in self.PRICETABLE.items():
-			output_str = '{}\t{}\t{}\t{}\t{}'.format(k, v.COST, v.CATEGORY, v.ITEMNUM, v.REQDATE)
+			output_str = '{}\t{}\t{}\t{}\t{}'.format(k, v.COST, v.CATEGORY, v.ITEMNUM, v.ON_FORMULARY, v.REQDATE)
 			ndc_list.append(output_str)
 
 		write_str = '\n'.join(ndc_list)
@@ -445,6 +449,7 @@ def formulary_update_from_pricetable(formulary, pricetable, set_similarity_ratin
 
 						# Mark if invoice entry as a match with an EHHapp formuary medication (regardless of dose)
 						has_pricetable_match = True
+						record.PRICETABLE[k] = v._replace(ON_FORMULARY = 'True')
 
 						if dosepatt.search(invnamedose):
 							
@@ -465,7 +470,8 @@ def formulary_update_from_pricetable(formulary, pricetable, set_similarity_ratin
 								MD_PRICE = mdcost,\
 								INV_NAMEDOSE = invnamedose,\
 								INV_PRICE = invcost,\
-								INV_ITEMNUM = itemnum)
+								INV_ITEMNUM = itemnum,\
+								ON_FORMULARY = 'False')
 							'''
 							print('\nFound a poor match...')
 							print('Formulary name and dose is: '+str(mdname)+' '+ str(mddose))
@@ -490,10 +496,11 @@ def formulary_update_from_pricetable(formulary, pricetable, set_similarity_ratin
 		if has_pricetable_match == False:
 			capture = invnamedose
 			pricetable_unmatched_meds.add(capture)
+			record.PRICETABLE[k] = v._replace(ON_FORMULARY = 'False')
 
-	return mcount, pricechanges, formulary, smatchcount, pricetable_unmatched_meds, fuzzymatches
+	return mcount, pricechanges, formulary, pricetable, smatchcount, pricetable_unmatched_meds, fuzzymatches
 
-def formulary_update_from_usermatches(formulary, usermatches, pricetable_unmatched_meds):
+def formulary_update_from_usermatches(formulary, pricetable, usermatches, pricetable_unmatched_meds):
 	"""Update drugs in formulary with prices from user.
 	"""
 	# Keeps track of the number of matches
@@ -509,8 +516,9 @@ def formulary_update_from_usermatches(formulary, usermatches, pricetable_unmatch
 	matches = {}
 	for line in usermatches:
 
-		# Divide each line into items deliminated by ":"
+		# Divide each line into items which have been deliminated by ":"
 		item = line.split(':')
+		print(item)
 
 		# Instantiate namedtuple from using values returned by list indices
 		entry = FuzzyMatch(
@@ -518,8 +526,8 @@ def formulary_update_from_usermatches(formulary, usermatches, pricetable_unmatch
 			MD_PRICE = item[1],\
 			INV_NAMEDOSE = item[2],\
 			INV_PRICE = item[3],\
-			INV_ITEMNUM = item[4]
-			)
+			INV_ITEMNUM = item[4],\
+			ON_FORMULARY = 'True')
 
 		# Use markdown formulary NAMEDOSE field as the key 'k' for our dictionary of InvRec objects
 		k = entry.MD_NAMEDOSE
@@ -538,6 +546,7 @@ def formulary_update_from_usermatches(formulary, usermatches, pricetable_unmatch
 			inv_namedose = v.INV_NAMEDOSE
 			inv_price = v.INV_PRICE
 			inv_itemnum = v.INV_ITEMNUM
+			on_formulary = v.ON_FORMULARY
 
 			# Then loop through each dose/cost pair for the given record
 			for k, v in record.PRICETABLE.items():
@@ -552,7 +561,7 @@ def formulary_update_from_usermatches(formulary, usermatches, pricetable_unmatch
 					# Update formulary medication price if there is price difference
 					if mdcost != inv_price:
 						newpricechanges += 1
-						record.PRICETABLE[k] = v._replace(COST = inv_price, ITEMNUM = inv_itemnum)
+						record.PRICETABLE[k] = v._replace(COST = inv_price, ITEMNUM = inv_itemnum, ON_FORMULARY = on_formulary)
 						print("New price found for {} a.k.a. {}\nFormulary price: {}\nInvoice price: {}".format(inv_namedose, k, mdcost, inv_price))
 						print("Formulary updated so price is now {}".format(record.PRICETABLE[k].COST))
 
@@ -618,7 +627,7 @@ def process_pricetable(invoice_path, pricetable_path, debug=True, verbose_debug=
 
 	current_script_path = os.path.realpath(__file__)[:-len('/rxparse.py')]
 	if debug == True:
-		pricetable_updated_path = current_script_path+'/testing/'+pricetable_filename_no_extension+'_UPDATED.tsv'
+		pricetable_updated_path = current_script_path+'/testing/'+pricetable_filename_no_extension+'.tsv'
 	else:
 		pricetable_updated_path = current_script_path+'/persistent/'+pricetable_filename_no_extension+'_UPDATED.tsv'
 	
@@ -669,7 +678,7 @@ def process_formulary(pricetable_updated_path, formulary_md_path, output_filenam
 	
 	# Updating Formulary Against Invoice
 	print('\nFinding Matches...')
-	mcount, pricechanges, updatedformulary, softmatch, pricetable_unmatched_meds, fuzzymatches = formulary_update_from_pricetable(formulary, pricetable)
+	mcount, pricechanges, updatedformulary, pricetable, softmatch, pricetable_unmatched_meds, fuzzymatches = formulary_update_from_pricetable(formulary, pricetable)
 
 	print('Number of partial medication matches: {}'.format(softmatch))
 	screen_output.append(['Number of partial medication matches',softmatch])

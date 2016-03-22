@@ -501,7 +501,7 @@ def formulary_update_from_pricetable(formulary, pricetable, set_similarity_ratin
 
 	return mcount, pricechanges, formulary, pricetable, smatchcount, pricetable_unmatched_meds, fuzzymatches
 
-def formulary_update_from_usermatches(formulary, pricetable, usermatches, pricetable_unmatched_meds):
+def formulary_update_from_usermatches(formulary, pricetable, pricetable_unmatched_meds, usermatches):
 	"""Update drugs in formulary with prices from user.
 	"""
 	# Keeps track of the number of matches
@@ -627,15 +627,16 @@ def process_pricetable(invoice_path, pricetable_path, debug=True, verbose_debug=
 	output_filename_list = []
 	
 	pricetable_filename = pricetable_path.split('/')[-1] #remove directory from filename
+	''' TODO DELETE AFTER CONFIRMING
 	pricetable_filename_no_extension = pricetable_filename.split('.', 1)[0]
-
 	current_script_path = os.path.realpath(__file__)[:-len('/rxparse.py')]
 	if debug == True:
 		pricetable_updated_path = current_script_path+'/testing/'+pricetable_filename_no_extension+'.tsv'
 	else:
 		pricetable_updated_path = current_script_path+'/persistent/'+pricetable_filename_no_extension+'_UPDATED.tsv'
-	
 	output_filename_list.append(pricetable_filename_no_extension+'_UPDATED.tsv')
+	'''
+	output_filename_list.append(pricetable_filename)
 
 	# Create container for webpage output
 	screen_output = []
@@ -653,16 +654,16 @@ def process_pricetable(invoice_path, pricetable_path, debug=True, verbose_debug=
 
 	pricetable = read_pricetable(pricetable_path)
 	pricetable_updated = compare_pricetable(pricetable, recordlist)
-	write_pricetable(pricetable, pricetable_updated_path)
+	write_pricetable(pricetable, pricetable_path)
 
 	print('Number of price table entries: {}'.format(len(pricetable)))
 	screen_output.append(['Number of price table entries',len(pricetable)])
 	print('Each Entry is a: {}'.format(type(next(iter(pricetable.values())))))
-	return(pricetable_updated_path, screen_output, output_filename_list)
+	return(screen_output, output_filename_list)
 
-def process_formulary(pricetable_updated_path, formulary_md_path, output_filename_list, screen_output, verbose_debug=False):
+def process_formulary(pricetable_path, formulary_md_path, output_filename_list, screen_output, verbose_debug=False):
 	# Load updated pricetable
-	pricetable = read_pricetable(pricetable_updated_path)
+	pricetable = read_pricetable(pricetable_path)
 
 	# Processing formulary
 	print('\nProcessing Formulary Markdown...')
@@ -712,7 +713,10 @@ def process_formulary(pricetable_updated_path, formulary_md_path, output_filenam
 
 	return pricetable_unmatched_meds, output_filename_list, screen_output, fuzzymatches
 
-def process_usermatches(usermatches, formulary_md_path, pricetable_unmatched_meds, output_filename_list, screen_output):
+def process_usermatches(usermatches, formulary_md_path, pricetable_unmatched_meds, pricetable_path, output_filename_list, screen_output):
+	# Load updated pricetable
+	pricetable = read_pricetable(pricetable_path)
+
 	# Process FileIO
 	formulary_md_filename = formulary_md_path.split('/')[-1] #remove directory from filename
 	formulary_md_filename_no_extension = formulary_md_filename.split('.', 1)[0]
@@ -730,11 +734,14 @@ def process_usermatches(usermatches, formulary_md_path, pricetable_unmatched_med
 	formularyparsed = parse_mddata(formularylist)
 	formulary = store_formulary(formularyparsed)
 
-	newmcount, newpricechanges, updatedformulary, pricetable_unmatched_meds, pricetable = formulary_update_from_usermatches(formulary, pricetable, usermatches, pricetable_unmatched_meds)
+	updatedformulary, updatedpricetable, pricetable_unmatched_meds, newmcount, newpricechanges = formulary_update_from_usermatches(formulary, pricetable, pricetable_unmatched_meds, usermatches)
 
 	# Save updated formulary as markdown and tsv
 	formulary_to_Markdown(updatedformulary, formulary_update_rm_path)
 	formulary_to_TSV(updatedformulary, formulary_update_tsv_path)
+
+	# Save updated pricetable
+	write_pricetable(updatedpricetable, pricetable_path)
 
 	# Update screen outputs
 	screen_output[4][1] = screen_output[4][1] + newmcount # Number of matches

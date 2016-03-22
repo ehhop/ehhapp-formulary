@@ -70,11 +70,11 @@ def process_file():
 	formulary_md_path = str(upload_filepath_list[0])
 	invoice_path = str(upload_filepath_list[1])
 	pricetable_path = os.path.join(app.config['PERSISTENT_FOLDER'],PERSISTENT_PRICETABLE_FILENAME)
-
-	# Run update function for pricetable and formulary and capture fuzzy matches
-	pricetable_updated_path, screen_output, output_filename_list = process_pricetable(invoice_path, pricetable_path, verbose_debug=False)
 	
-	pricetable_unmatched_meds, output_filename_list, screen_output, fuzzymatches = process_formulary(pricetable_updated_path, formulary_md_path, output_filename_list, screen_output)
+	# Run update function for pricetable and formulary and capture fuzzy matches
+	screen_output, output_filename_list = process_pricetable(invoice_path, pricetable_path, verbose_debug=False)
+	
+	pricetable_unmatched_meds, output_filename_list, screen_output, fuzzymatches = process_formulary(pricetable_path, formulary_md_path, output_filename_list, screen_output)
 
 	app.logger.debug(screen_output) #debugging
 	
@@ -90,7 +90,7 @@ def process_file():
 	resp.set_cookie('output_filename_list', json_output_filename_list)
 	resp.set_cookie('screen_output', json_screen_output)
 	resp.set_cookie('pricetable_unmatched_meds', json_pricetable_unmatched_meds)
-
+	resp.set_cookie('pricetable_path', pricetable_path)
 	return resp
 
 @app.route('/output/<filename>')
@@ -103,6 +103,7 @@ def result():
 	json_screen_output = request.cookies.get('screen_output')
 	json_pricetable_unmatched_meds = request.cookies.get('pricetable_unmatched_meds')
 	formulary_md_path = request.cookies.get('formulary_md_path')
+	pricetable_path = request.cookies.get('pricetable_path')
 
 	output_filename_list = json.loads(json_output_filename_list)
 	pricetable_unmatched_meds_list = json.loads(json_pricetable_unmatched_meds)
@@ -115,7 +116,7 @@ def result():
 	usermatches = request.form.getlist('usermatches')
 	app.logger.debug(usermatches) #debugging
 	
-	pricetable_unmatched_meds, screen_output = process_usermatches(usermatches, formulary_md_path, pricetable_unmatched_meds, output_filename_list, screen_output)
+	pricetable_unmatched_meds, screen_output = process_usermatches(usermatches, formulary_md_path, pricetable_unmatched_meds, pricetable_path, output_filename_list, screen_output)
 
 	# Convert screen output from array to strings
 	screen_output_strings = []

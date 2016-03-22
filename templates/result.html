@@ -20,18 +20,18 @@
     <div class="output-box">
         {% for output in screen_output %}<p id="output-box-text">{{output}}</p>{% endfor %}
     </div>
-
+    <br>
     <div>
       <div class="header">
         <h4 class="text-muted">Download Output Files</h4>
       </div>
       <span class="btn-toolbar">
-        {% for file in output_filename_list %}
-        <a class="btn btn-group btn-primary" href="{{url_for('output_file', filename=file)}}">{{file}}</a>
-        {% endfor %}
+        <a class="btn btn-group btn-primary" href="{{url_for('output_file', filename=output_filename_list[0])}}">Invoice Pricetable</a>
+        <a class="btn btn-group btn-primary" href="{{url_for('output_file', filename=output_filename_list[1])}}">Updated EHHapp Formulary</a>
+        <a class="btn btn-group btn-primary" href="{{url_for('output_file', filename=output_filename_list[2])}}">Formulary Spreadsheet</a>
       </span>
     </div>
-
+    <br>
     <div class="header">
       <h4 class="text-muted">Invoice Medications Without Matches</h4>
     </div>

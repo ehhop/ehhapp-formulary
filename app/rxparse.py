@@ -36,7 +36,7 @@ def read_csv(filename):
 
 		return invoice
 
-def read_pricetable(pricetable_path):
+def read_pricetable(pricetable_persist_path):
 	"""Import unique drug and price records from a persistent pricetable.
 
 	Load drug and price records from a persistent pricetable as InvRec(Collections.namedtuple) instances.
@@ -45,7 +45,7 @@ def read_pricetable(pricetable_path):
 	"""
 
 	# Open, read, and filter
-	with open(pricetable_path, 'rU') as f:
+	with open(pricetable_persist_path, 'rU') as f:
 		# Instantiate csv.reader
 		readerobj = csv.reader(f, delimiter='\t')
 		next(readerobj) # Skip line with column headings
@@ -596,7 +596,7 @@ def formulary_to_Markdown(formulary, updated_markdown_filename):
 	with open(updated_markdown_filename, "w") as f:
 		f.write('\n'.join(output))
 
-def formulary_to_TSV(formulary, updated_pricetable_path):
+def formulary_to_TSV(formulary, updated_pricetable_persist_path):
 	'''Outputs updated Formulary database to CSV
 	'''
 	output = []
@@ -604,7 +604,7 @@ def formulary_to_TSV(formulary, updated_pricetable_path):
 	for record in formulary:
 		output.append(record._to_csv())
 
-	with open(updated_pricetable_path, "w") as f:
+	with open(updated_pricetable_persist_path, "w") as f:
 		f.write('\n'.join(output))
 
 """
@@ -616,7 +616,7 @@ def screen_and_console_print(output, screen_output):
 	screen_output.append(output)
 	return screen_output
 '''
-def process_pricetable(invoice_path, pricetable_path, debug=True, verbose_debug=False):
+def process_pricetable(invoice_path, pricetable_persist_path, debug=True, verbose_debug=False):
 	'''Main function of script. Creates updated formulary markdown and pricetable.
 
 	Data files need to be place in a subfolder named "input".
@@ -626,7 +626,9 @@ def process_pricetable(invoice_path, pricetable_path, debug=True, verbose_debug=
 	# Process FileIO
 	output_filename_list = []
 	
-	pricetable_filename = pricetable_path.split('/')[-1] #remove directory from filename
+	pricetable_filename = pricetable_persist_path.split('/')[-1] #remove directory from filename
+	current_script_path = os.path.realpath(__file__)[:-len('/rxparse.py')]
+	pricetable_output_path = current_script_path+'/output/'+pricetable_filename
 	''' TODO DELETE AFTER CONFIRMING
 	pricetable_filename_no_extension = pricetable_filename.split('.', 1)[0]
 	current_script_path = os.path.realpath(__file__)[:-len('/rxparse.py')]
@@ -652,18 +654,18 @@ def process_pricetable(invoice_path, pricetable_path, debug=True, verbose_debug=
 		print('Sample Invoice:')
 		print(recordlist[0])
 
-	pricetable = read_pricetable(pricetable_path)
+	pricetable = read_pricetable(pricetable_persist_path)
 	pricetable_updated = compare_pricetable(pricetable, recordlist)
-	write_pricetable(pricetable, pricetable_path)
+	write_pricetable(pricetable, pricetable_persist_path)
 
 	print('Number of price table entries: {}'.format(len(pricetable)))
 	screen_output.append(['Number of price table entries',len(pricetable)])
 	print('Each Entry is a: {}'.format(type(next(iter(pricetable.values())))))
-	return(screen_output, output_filename_list)
+	return(screen_output, output_filename_list, pricetable_output_path)
 
-def process_formulary(pricetable_path, formulary_md_path, output_filename_list, screen_output, verbose_debug=False):
+def process_formulary(pricetable_persist_path, formulary_md_path, output_filename_list, screen_output, verbose_debug=False):
 	# Load updated pricetable
-	pricetable = read_pricetable(pricetable_path)
+	pricetable = read_pricetable(pricetable_persist_path)
 
 	# Processing formulary
 	print('\nProcessing Formulary Markdown...')
@@ -712,13 +714,14 @@ def process_formulary(pricetable_path, formulary_md_path, output_filename_list, 
 	screen_output.append(['Number of blacklisted drugs',len(blacklisted)])
 
 	# Save updated pricetable
-	write_pricetable(updatedpricetable, pricetable_path)
+	write_pricetable(updatedpricetable, pricetable_persist_path)
+	write_pricetable
 
 	return pricetable_unmatched_meds, output_filename_list, screen_output, fuzzymatches
 
-def process_usermatches(usermatches, formulary_md_path, pricetable_unmatched_meds, pricetable_path, output_filename_list, screen_output):
+def process_usermatches(usermatches, formulary_md_path, pricetable_unmatched_meds, pricetable_persist_path, pricetable_output_path, output_filename_list, screen_output):
 	# Load updated pricetable
-	pricetable = read_pricetable(pricetable_path)
+	pricetable = read_pricetable(pricetable_persist_path)
 
 	# Process FileIO
 	formulary_md_filename = formulary_md_path.split('/')[-1] #remove directory from filename
@@ -745,7 +748,8 @@ def process_usermatches(usermatches, formulary_md_path, pricetable_unmatched_med
 
 	print(updatedpricetable)
 	# Save updated pricetable
-	write_pricetable(updatedpricetable, pricetable_path)
+	write_pricetable(updatedpricetable, pricetable_persist_path)
+	write_pricetable(updatedpricetable, pricetable_output_path)
 
 	# Update screen outputs
 	screen_output[4][1] = screen_output[4][1] + newmcount # Number of matches

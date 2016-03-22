@@ -69,7 +69,7 @@ def read_pricetable(pricetable_path):
 					COST = item[1], \
 					CATEGORY = item[3], \
 					ITEMNUM = item[2], \
-					ON_FORMULARY = "NaN", \
+					ON_FORMULARY = item[5], \
 					REQDATE = converteddatetime)
 
 			# Use NAMEDOSE field as the key 'k' for our dictionary of InvRec objects
@@ -104,7 +104,7 @@ def compare_pricetable(pricetable, invoice):
 				COST = item[15], \
 				CATEGORY = item[8], \
 				ITEMNUM = item[2], \
-				ON_FORMULARY = "NaN", \
+				ON_FORMULARY = item[5], \
 				REQDATE = converteddatetime)
 		
 		# Use NAMEDOSE field as the key 'k' for our dictionary of InvRec objects
@@ -415,8 +415,6 @@ def formulary_update_from_pricetable(formulary, pricetable, set_similarity_ratin
 		# Set the PRICETABLE attribute
 		record._set_PRICETABLE()
 
-	print(pricetable)
-
 	# Look up a matching record stored in the invoice-derived pricetable
 	for nd, ir in pricetable.items():
 		invnamedose = nd.lower()
@@ -452,6 +450,7 @@ def formulary_update_from_pricetable(formulary, pricetable, set_similarity_ratin
 						# Mark if invoice entry as a match with an EHHapp formuary medication (regardless of dose)
 						has_pricetable_match = True
 						record.PRICETABLE[k] = v._replace(ON_FORMULARY = 'True')
+						pricetable[nd] = ir._replace(ON_FORMULARY = 'True')
 
 						if dosepatt.search(invnamedose):
 							
@@ -497,6 +496,7 @@ def formulary_update_from_pricetable(formulary, pricetable, set_similarity_ratin
 		if has_pricetable_match == False:
 			capture = invnamedose
 			pricetable_unmatched_meds.add(capture)
+			record.PRICETABLE[k] = v._replace(ON_FORMULARY = 'False')
 			pricetable[nd] = ir._replace(ON_FORMULARY = 'False')
 
 	return mcount, pricechanges, formulary, pricetable, smatchcount, pricetable_unmatched_meds, fuzzymatches
@@ -537,7 +537,6 @@ def formulary_update_from_usermatches(formulary, pricetable, pricetable_unmatche
 
 		# Update the persistent pricetable
 		# Note that medication is on the formulary
-		print(pricetable.keys())
 		v = pricetable[entry.INV_NAMEDOSE.upper()]
 		pricetable[k] = v._replace(ON_FORMULARY = 'True')
 
@@ -552,7 +551,6 @@ def formulary_update_from_usermatches(formulary, pricetable, pricetable_unmatche
 			inv_namedose = v.INV_NAMEDOSE
 			inv_price = v.INV_PRICE
 			inv_itemnum = v.INV_ITEMNUM
-			on_formulary = v.ON_FORMULARY
 
 			# Then loop through each dose/cost pair for the given record
 			for k, v in record.PRICETABLE.items():
@@ -567,14 +565,14 @@ def formulary_update_from_usermatches(formulary, pricetable, pricetable_unmatche
 					# Update formulary medication price if there is price difference
 					if mdcost != inv_price:
 						newpricechanges += 1
-						record.PRICETABLE[k] = v._replace(COST = inv_price, ITEMNUM = inv_itemnum, ON_FORMULARY = on_formulary)
+						record.PRICETABLE[k] = v._replace(COST = inv_price, ITEMNUM = inv_itemnum, ON_FORMULARY = 'True')
 						print("New price found for {} a.k.a. {}\nFormulary price: {}\nInvoice price: {}".format(inv_namedose, k, mdcost, inv_price))
 						print("Formulary updated so price is now {}".format(record.PRICETABLE[k].COST))
 
 			# Remove user matched medcations from the list of unmatched invoice mediations
 			pricetable_unmatched_meds.discard(md_namedose)
 
-	return newmcount, newpricechanges, formulary, pricetable_unmatched_meds, pricetable
+	return pricetable, formulary, newmcount, newpricechanges, pricetable_unmatched_meds
 
 """
 ### WORK-IN-PROGRESS
@@ -685,7 +683,7 @@ def process_formulary(pricetable_path, formulary_md_path, output_filename_list, 
 	
 	# Updating Formulary Against Invoice
 	print('\nFinding Matches...')
-	mcount, pricechanges, updatedformulary, pricetable, softmatch, pricetable_unmatched_meds, fuzzymatches = formulary_update_from_pricetable(formulary, pricetable)
+	mcount, pricechanges, updatedformulary, updatedpricetable, softmatch, pricetable_unmatched_meds, fuzzymatches = formulary_update_from_pricetable(formulary, pricetable)
 
 	print('Number of partial medication matches: {}'.format(softmatch))
 	screen_output.append(['Number of partial medication matches',softmatch])
@@ -713,6 +711,9 @@ def process_formulary(pricetable_path, formulary_md_path, output_filename_list, 
 	print('Number of blacklisted drugs: {}'.format(len(blacklisted)))
 	screen_output.append(['Number of blacklisted drugs',len(blacklisted)])
 
+	# Save updated pricetable
+	write_pricetable(updatedpricetable, pricetable_path)
+
 	return pricetable_unmatched_meds, output_filename_list, screen_output, fuzzymatches
 
 def process_usermatches(usermatches, formulary_md_path, pricetable_unmatched_meds, pricetable_path, output_filename_list, screen_output):
@@ -736,12 +737,13 @@ def process_usermatches(usermatches, formulary_md_path, pricetable_unmatched_med
 	formularyparsed = parse_mddata(formularylist)
 	formulary = store_formulary(formularyparsed)
 
-	updatedformulary, updatedpricetable, pricetable_unmatched_meds, newmcount, newpricechanges = formulary_update_from_usermatches(formulary, pricetable, pricetable_unmatched_meds, usermatches)
+	updatedpricetable, updatedformulary, newmcount, newpricechanges, pricetable_unmatched_meds= formulary_update_from_usermatches(formulary, pricetable, pricetable_unmatched_meds, usermatches)
 
 	# Save updated formulary as markdown and tsv
 	formulary_to_Markdown(updatedformulary, formulary_update_rm_path)
 	formulary_to_TSV(updatedformulary, formulary_update_tsv_path)
 
+	print(updatedpricetable)
 	# Save updated pricetable
 	write_pricetable(updatedpricetable, pricetable_path)
 

@@ -535,9 +535,11 @@ def formulary_update_from_usermatches(formulary, pricetable, pricetable_unmatche
 		# All keys will be stored immediately with their corresponding values.
 		matches[k] = entry
 
-	# Update the persistent pricetable
-	# Note that medication is on the formulary
-	pricetable[MD_NAMEDOSE] = v._replace(ON_FORMULARY = 'True')
+		# Update the persistent pricetable
+		# Note that medication is on the formulary
+		print(pricetable.keys())
+		v = pricetable[entry.INV_NAMEDOSE.upper()]
+		pricetable[k] = v._replace(ON_FORMULARY = 'True')
 
 	# Loop through each FormularyRecord
 	for record in formulary:

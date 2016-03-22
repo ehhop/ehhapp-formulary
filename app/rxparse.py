@@ -56,10 +56,16 @@ def read_pricetable(pricetable_persist_path):
 		for item in csvlines:
 
 			# Convert date string to datetime object
-			dtformat = '%Y-%m-%d %H:%M:%S'
+			dtformat = '%Y-%m-%d %H:%M'
 			datestr = item[4]
-
-			converteddatetime = datetime.strptime(datestr, dtformat)
+			try:
+				converteddatetime = datetime.strptime(datestr, dtformat)
+			except ValueError as v:
+				if len(v.args) > 0 and v.args[0].startswith('unconverted data remains: '):
+					datestr = datestr[:-(len(v.args[0])-26)]
+					converteddatetime = datetime.strptime(datestr, dtformat)
+				else:
+					raise v
 
 			# Instantiate namedtuple from using values returned by list indices
 			entry = InvRec(
@@ -104,7 +110,7 @@ def compare_pricetable(pricetable, invoice):
 				COST = item[15], \
 				CATEGORY = item[8], \
 				ITEMNUM = item[2], \
-				ON_FORMULARY = item[5], \
+				ON_FORMULARY = "NaN", \
 				REQDATE = converteddatetime)
 		
 		# Use NAMEDOSE field as the key 'k' for our dictionary of InvRec objects
@@ -654,7 +660,10 @@ def process_pricetable(invoice_path, pricetable_persist_path, debug=True, verbos
 		print('Sample Invoice:')
 		print(recordlist[0])
 
-	pricetable = read_pricetable(pricetable_persist_path)
+	if os.path.isfile(pricetable_persist_path):
+		pricetable = read_pricetable(pricetable_persist_path)
+	else:
+		pricetable = {}
 	pricetable_updated = compare_pricetable(pricetable, recordlist)
 	write_pricetable(pricetable, pricetable_persist_path)
 

@@ -471,6 +471,7 @@ def formulary_update_from_pricetable(formulary, pricetable, set_similarity_ratin
 					# Is partial match if formulary name is not subset of pricetable name,
 					# formulary name is similar to pricetable name, and doses are same
 					else:
+						record.PRICETABLE[k] = v._replace(ON_FORMULARY = 'False')
 						if dosepatt.search(invnamedose):
 							fuzzymatches[invnamedose] = FuzzyMatch(
 								MD_NAMEDOSE = mdnamedose,\
@@ -499,10 +500,11 @@ def formulary_update_from_pricetable(formulary, pricetable, set_similarity_ratin
 							elif user_input == 'n':
 								print('This medication price will not be changed.')
 							'''
+				else:
+					record.PRICETABLE[k] = v._replace(ON_FORMULARY = 'False')
 		if has_pricetable_match == False:
 			capture = invnamedose
 			pricetable_unmatched_meds.add(capture)
-			record.PRICETABLE[k] = v._replace(ON_FORMULARY = 'False')
 			pricetable[nd] = ir._replace(ON_FORMULARY = 'False')
 
 	return mcount, pricechanges, formulary, pricetable, smatchcount, pricetable_unmatched_meds, fuzzymatches

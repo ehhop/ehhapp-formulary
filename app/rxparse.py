@@ -4,6 +4,7 @@ from statistics import mean
 from fuzzywuzzy import fuzz
 from datetime import datetime
 from collections import namedtuple, OrderedDict
+from dateutil.parser import parse
 import os
 
 
@@ -53,13 +54,13 @@ def read_pricetable(pricetable_persist_path):
 
 		# Iterate over and parse each drug and price record
 		pricetable = {}
+
 		for item in csvlines:
 
 			# Convert date string to datetime object
-			dtformat = '%Y-%m-%d %H:%M'
 			datestr = item[4]
 			try:
-				converteddatetime = datetime.strptime(datestr, dtformat)
+				converteddatetime = parse(datestr)
 			except ValueError as v:
 				if len(v.args) > 0 and v.args[0].startswith('unconverted data remains: '):
 					datestr = datestr[:-(len(v.args[0])-26)]
@@ -98,9 +99,8 @@ def compare_pricetable(pricetable, invoice):
 	for item in invoice:
 
 		# Convert date string to datetime object
-		dtformat = '%m/%d/%y %H:%M'
 		datestr = item[12]
-		converteddatetime = datetime.strptime(datestr, dtformat)
+		converteddatetime = parse(datestr)
 
 		# Instantiate namedtuple from using values returned by list indices
 		entry = InvRec(
@@ -697,7 +697,7 @@ def process_formulary(pricetable_persist_path, formulary_md_path, output_filenam
 	# Updating Formulary Against Invoice
 	print('\nFinding Matches...')
 	mcount, pricechanges, updatedformulary, updatedpricetable, softmatch, pricetable_unmatched_meds, fuzzymatches = formulary_update_from_pricetable(formulary, pricetable)
-
+	
 	print('Number of partial medication matches: {}'.format(softmatch))
 	screen_output.append(['Number of partial medication matches',softmatch])
 

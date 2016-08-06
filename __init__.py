@@ -76,7 +76,7 @@ def process_file():
 	
 	pricetable_unmatched_meds, output_filename_list, screen_output, fuzzymatches = process_formulary(pricetable_persist_path, formulary_md_path, output_filename_list, screen_output)
 
-	app.logger.debug(screen_output) #debugging
+	#app.logger.debug(pricetable_unmatched_meds) #debugging
 	
 	# Store output files list, screen output, and unmatched medications as cookies
 	# Render selection.html page
@@ -85,6 +85,9 @@ def process_file():
 	json_output_filename_list = json.dumps(output_filename_list)
 	json_pricetable_unmatched_meds = json.dumps(pricetable_unmatched_meds, default=json_encode_set)
 	json_screen_output = json.dumps(screen_output)
+
+	app.logger.debug(json_pricetable_unmatched_meds) #debugging
+	app.logger.debug('Unmatched Medications') #debugging
 
 	resp.set_cookie('formulary_md_path', formulary_md_path)
 	resp.set_cookie('output_filename_list', json_output_filename_list)
@@ -108,6 +111,10 @@ def result():
 	pricetable_output_path = request.cookies.get('pricetable_output_path')
 	
 	output_filename_list = json.loads(json_output_filename_list)
+
+	app.logger.debug(json_output_filename_list)
+	app.logger.debug(json_pricetable_unmatched_meds)
+
 	pricetable_unmatched_meds_list = json.loads(json_pricetable_unmatched_meds)
 	screen_output = json.loads(json_screen_output)
 
@@ -136,3 +143,5 @@ if __name__ == '__main__':
 		debug=True,
 		use_reloader=True
 	)
+
+	sentry.init_app(app, wrap_wsgi=False)

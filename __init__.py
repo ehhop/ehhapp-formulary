@@ -142,7 +142,6 @@ def result():
     return render_template('result.html', output_filename_list=output_filename_list, screen_output=screen_output, pricetable_unmatched_meds=pricetable_unmatched_meds)
 
 if __name__ == '__main__':
-<<<<<<< HEAD
     port = int(os.environ.get('PORT', 5050))
     app.run(
         host='0.0.0.0',
@@ -152,12 +151,3 @@ if __name__ == '__main__':
     )
 
     sentry.init_app(app, wrap_wsgi=False)
-=======
-	port = int(os.environ.get('PORT', 5050))
-	app.run(
-		host='0.0.0.0',
-		port=port,
-		debug=True,
-		use_reloader=True
-	)
->>>>>>> de5b2c57011bd2637a7196546dee8dc34692d370

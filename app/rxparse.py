@@ -49,6 +49,7 @@ def read_pricetable(pricetable_persist_path):
 
     # Open, read, and filter
     with open(pricetable_persist_path, 'rU') as f:
+
         # Instantiate csv.reader
         readerobj = csv.reader(f, delimiter='\t')
         next(readerobj) # Skip line with column headings
@@ -201,7 +202,7 @@ def match_string_fuzzy(string, phrase, set_similarity_rating):
     return is_fuzzy_match
 
 
-def formulary_update_from_pricetable(formulary, pricetable, set_similarity_rating=100):
+def formulary_update_from_pricetable(formulary, pricetable, set_similarity_rating=70):
     """Update drugs in formulary with prices from invoice.
     """
     # Keeps track of soft matches
@@ -246,7 +247,7 @@ def formulary_update_from_pricetable(formulary, pricetable, set_similarity_ratin
                 dosepatt = re.compile(r"\b{}".format(mddose))
 
                 # Use fuzzy matching to capture edge cases
-                if match_string_fuzzy(mdname, invnamedose, set_similarity_rating=70):
+                if match_string_fuzzy(mdname, invnamedose, set_similarity_rating):
 
                     # Is soft match if formulary name is similar of pricetable name of same dose
                     if dosepatt.search(invnamedose):

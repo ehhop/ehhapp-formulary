@@ -1,4 +1,10 @@
 import re
+from collections import namedtuple
+
+# Classes and Functions for reading and parsing invoices
+InvRec = namedtuple('InvoiceRecord', ['NAMEDOSE', 'NAME', 'DOSE', 'COST', 'CATEGORY', 'ITEMNUM',
+                                      'ON_FORMULARY','REQDATE'])
+FuzzyMatch = namedtuple('FuzzyMatch', ['MD_NAMEDOSE', 'MD_PRICE', 'INV_NAMEDOSE', 'INV_PRICE', 'INV_ITEMNUM'])
 
 
 class FormularyRecord:

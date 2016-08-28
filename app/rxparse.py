@@ -583,7 +583,3 @@ def process_usermatches(usermatches, formulary_md_path, pricetable_unmatched_med
     screen_output[6][1] = screen_output[6][1] - newmcount  # Number of unmatched invoice entries
 
     return pricetable_unmatched_meds, screen_output
-
-if __name__ == "__main__":
-    from sys import argv
-    update_rx(argv[1], argv[2], argv[3])

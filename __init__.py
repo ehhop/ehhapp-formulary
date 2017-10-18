@@ -3,11 +3,13 @@ import os, os.path, json, datetime
 from flask import Flask, render_template, request, redirect, url_for, send_from_directory, make_response
 from werkzeug import secure_filename
 from app.rxparse import process_pricetable, process_formulary, process_usermatches
+import random, pickle
 
 UPLOAD_FOLDER = 'app/input'
 PERSISTENT_FOLDER = 'app/persistent'
 BACKUP_FOLDER = 'app/markdown-backup'
 OUTPUT_FOLDER = 'app/output'
+TMP_FOLDER = 'app/tmp'
 ALLOWED_EXTENSIONS = set(['txt','xls','xlsx','csv','tsv','md', 'markdown'])
 PERSISTENT_PRICETABLE_FILENAME = 'persistent-pricetable.tsv'
 
@@ -41,6 +43,7 @@ def process_file():
     # Check for missing files and save uploaded file paths
     uploaded_files = request.files.getlist("file")
     upload_filepath_list = []
+    
 
     for file in uploaded_files:
 
@@ -92,29 +95,42 @@ def process_file():
 
     app.logger.debug(json_pricetable_unmatched_meds)  #debugging
     app.logger.debug('Unmatched Medications')  #debugging
+    
+    result_string = randomword(64) #this is the preferred method
+    
+    with open(TMP_FOLDER + "/" + result_string, "w") as f:
+        pickle.dump([formulary_md_path,
+                     json_output_filename_list,
+                     json_screen_output,
+                     json_pricetable_unmatched_meds,
+                     pricetable_persist_path,
+                     pricetable_output_path],f)
 
-    resp.set_cookie('formulary_md_path', formulary_md_path)
-    resp.set_cookie('output_filename_list', json_output_filename_list)
-    resp.set_cookie('screen_output', json_screen_output)
-    resp.set_cookie('pricetable_unmatched_meds', json_pricetable_unmatched_meds)
-    resp.set_cookie('pricetable_persist_path', pricetable_persist_path)
-    resp.set_cookie('pricetable_output_path', pricetable_output_path)
+    resp.set_cookie('result_string', result_string)
     return resp
-
 
 @app.route('/output/<filename>')
 def output_file(filename):
     return send_from_directory(app.config['OUTPUT_FOLDER'],filename)
 
+def randomword(length):
+	'''generate a random string of whatever length, good for filenames'''
+	return ''.join(random.choice(string.lowercase) for i in range(length))
 
 @app.route('/result', methods=['POST'])
 def result():
-    json_output_filename_list = request.cookies.get('output_filename_list')
-    json_screen_output = request.cookies.get('screen_output')
-    json_pricetable_unmatched_meds = request.cookies.get('pricetable_unmatched_meds')
-    formulary_md_path = request.cookies.get('formulary_md_path')
-    pricetable_persist_path = request.cookies.get('pricetable_persist_path')
-    pricetable_output_path = request.cookies.get('pricetable_output_path')
+    result_string = secure_filename(request.cookies.get('result_string'))
+    
+    if len(result_string) != 64:
+        return "Error in submission.", 400
+    
+    with open(TMP_FOLDER + "/" + result_string,"r") as f:
+        formulary_md_path, 
+        json_output_filename_list, 
+        json_screen_output, 
+        json_pricetable_unmatched_meds, 
+        pricetable_persist_path, 
+        pricetable_output_path = pickle.load(f)
     
     output_filename_list = json.loads(json_output_filename_list)
 
